@@ -1,6 +1,7 @@
 import OddsButton from "./OddsButton";
 
 interface MatchCardProps {
+  matchId: string;
   league: string;
   team1: string;
   team2: string;
@@ -12,6 +13,7 @@ interface MatchCardProps {
 }
 
 const MatchCard = ({
+  matchId,
   league,
   team1,
   team2,
@@ -21,9 +23,10 @@ const MatchCard = ({
   isLive,
   odds,
 }: MatchCardProps) => {
+  const matchLabel = `${team1} vs ${team2}`;
+
   return (
     <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/30 transition">
-      {/* League & time */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
           {league}
@@ -39,7 +42,6 @@ const MatchCard = ({
         </div>
       </div>
 
-      {/* Teams */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
@@ -57,11 +59,10 @@ const MatchCard = ({
         </div>
       </div>
 
-      {/* Odds */}
       <div className="flex gap-2">
-        <OddsButton label="1" odds={odds.home} />
-        <OddsButton label="X" odds={odds.draw} />
-        <OddsButton label="2" odds={odds.away} />
+        <OddsButton label="1" odds={odds.home} selectionId={`${matchId}-home`} matchLabel={matchLabel} pick={`${team1} Win`} />
+        <OddsButton label="X" odds={odds.draw} selectionId={`${matchId}-draw`} matchLabel={matchLabel} pick="Draw" />
+        <OddsButton label="2" odds={odds.away} selectionId={`${matchId}-away`} matchLabel={matchLabel} pick={`${team2} Win`} />
         <button className="ml-auto text-xs text-muted-foreground hover:text-primary transition">
           +42
         </button>

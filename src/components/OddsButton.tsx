@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useBetting } from "@/context/BettingContext";
 
 interface OddsButtonProps {
   label: string;
   odds: number;
-  onSelect?: (selected: boolean) => void;
+  selectionId: string;
+  matchLabel: string;
+  pick: string;
 }
 
-const OddsButton = ({ label, odds, onSelect }: OddsButtonProps) => {
-  const [selected, setSelected] = useState(false);
+const OddsButton = ({ label, odds, selectionId, matchLabel, pick }: OddsButtonProps) => {
+  const { toggleSelection, isSelected } = useBetting();
+  const selected = isSelected(selectionId);
 
   const handleClick = () => {
-    setSelected(!selected);
-    onSelect?.(!selected);
+    toggleSelection({ id: selectionId, matchLabel, pick, odds });
   };
 
   return (
