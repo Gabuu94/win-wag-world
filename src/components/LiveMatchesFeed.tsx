@@ -1,21 +1,6 @@
 import MatchCard from "./MatchCard";
 import HeroBanner from "./HeroBanner";
-
-const liveMatches = [
-  { matchId: "live-1", league: "UEFA Champions League", team1: "FC Barcelona", team2: "Paris Saint-Germain", score1: 2, score2: 1, time: "67'", isLive: true, odds: { home: 1.65, draw: 3.8, away: 5.2 } },
-  { matchId: "live-2", league: "UEFA Champions League", team1: "Manchester City", team2: "Real Madrid", score1: 0, score2: 0, time: "32'", isLive: true, odds: { home: 2.1, draw: 3.4, away: 3.5 } },
-  { matchId: "live-3", league: "English Premier League", team1: "Arsenal", team2: "Liverpool", score1: 1, score2: 2, time: "78'", isLive: true, odds: { home: 3.2, draw: 3.6, away: 2.1 } },
-  { matchId: "live-4", league: "La Liga", team1: "Real Sociedad", team2: "Atletico Madrid", score1: 0, score2: 1, time: "55'", isLive: true, odds: { home: 3.8, draw: 3.2, away: 2.0 } },
-];
-
-const upcomingMatches = [
-  { matchId: "up-1", league: "Serie A", team1: "AC Milan", team2: "Juventus", time: "Today 20:45", isLive: false, odds: { home: 2.5, draw: 3.2, away: 2.9 } },
-  { matchId: "up-2", league: "Bundesliga", team1: "Bayern Munich", team2: "Borussia Dortmund", time: "Today 21:30", isLive: false, odds: { home: 1.55, draw: 4.2, away: 5.8 } },
-  { matchId: "up-3", league: "Ligue 1", team1: "PSG", team2: "Olympique Lyon", time: "Tomorrow 19:00", isLive: false, odds: { home: 1.3, draw: 5.5, away: 9.0 } },
-  { matchId: "up-4", league: "NBA", team1: "LA Lakers", team2: "Boston Celtics", time: "Tomorrow 02:00", isLive: false, odds: { home: 2.3, draw: 15.0, away: 1.65 } },
-  { matchId: "up-5", league: "ATP Tour", team1: "C. Alcaraz", team2: "N. Djokovic", time: "Tomorrow 14:00", isLive: false, odds: { home: 1.9, draw: 8.0, away: 1.95 } },
-  { matchId: "up-6", league: "English Premier League", team1: "Chelsea", team2: "Tottenham", time: "Sat 17:30", isLive: false, odds: { home: 2.2, draw: 3.4, away: 3.3 } },
-];
+import { liveMatches, upcomingMatches } from "@/data/matches";
 
 const LiveMatchesFeed = () => {
   return (
@@ -34,7 +19,7 @@ const LiveMatchesFeed = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {liveMatches.map((match) => (
-            <MatchCard key={match.matchId} {...match} />
+            <MatchCard key={match.matchId} match={match} />
           ))}
         </div>
       </div>
@@ -50,7 +35,7 @@ const LiveMatchesFeed = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {upcomingMatches.map((match) => (
-            <MatchCard key={match.matchId} {...match} />
+            <MatchCard key={match.matchId} match={match} />
           ))}
         </div>
       </div>

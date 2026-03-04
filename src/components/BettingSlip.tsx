@@ -1,9 +1,11 @@
 import { X, Trash2 } from "lucide-react";
 import { useBetting } from "@/context/BettingContext";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 const BettingSlip = () => {
   const { selections, removeSelection, clearAll, stake, setStake } = useBetting();
+  const { isLoggedIn, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
 
   const totalOdds = selections.length > 0
     ? selections.reduce((acc, b) => acc * b.odds, 1)
@@ -16,8 +18,36 @@ const BettingSlip = () => {
       toast.error("Add selections to your bet slip first!");
       return;
     }
-    toast.success(`Bet placed! ${selections.length} selection(s) at $${stake.toFixed(2)} — Potential win: $${potentialWin.toFixed(2)}`);
-    clearAll();
+    if (!isLoggedIn) {
+      toast.error("Please sign in to place bets");
+      setShowAuthModal(true);
+      return;
+    }
+    if (!user || user.balance < stake) {
+      toast.error("Insufficient balance. Please deposit funds.");
+      setShowDepositModal(true);
+      return;
+    }
+    if (stake <= 0) {
+      toast.error("Enter a valid stake amount");
+      return;
+    }
+
+    const ok = placeBet({
+      selections: selections.map((s) => ({ matchLabel: s.matchLabel, pick: s.pick, odds: s.odds })),
+      stake,
+      totalOdds,
+      potentialWin,
+    });
+
+    if (ok) {
+      toast.success(
+        `Bet placed! $${stake.toFixed(2)} on ${selections.length} selection(s) — Potential win: $${potentialWin.toFixed(2)}`
+      );
+      clearAll();
+    } else {
+      toast.error("Failed to place bet. Check your balance.");
+    }
   };
 
   return (
@@ -107,6 +137,13 @@ const BettingSlip = () => {
           />
         </div>
 
+        {isLoggedIn && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Balance</span>
+            <span className="font-medium text-foreground">${user!.balance.toFixed(2)}</span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Potential Win</span>
           <span className="font-bold text-accent">
@@ -119,7 +156,7 @@ const BettingSlip = () => {
           disabled={selections.length === 0}
           className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          Place Bet
+          {!isLoggedIn ? "Sign In to Bet" : "Place Bet"}
         </button>
       </div>
     </aside>

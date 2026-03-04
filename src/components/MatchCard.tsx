@@ -1,32 +1,21 @@
+import { MatchData } from "@/data/matches";
 import OddsButton from "./OddsButton";
+import { useNavigate } from "react-router-dom";
 
 interface MatchCardProps {
-  matchId: string;
-  league: string;
-  team1: string;
-  team2: string;
-  score1?: number;
-  score2?: number;
-  time: string;
-  isLive: boolean;
-  odds: { home: number; draw: number; away: number };
+  match: MatchData;
 }
 
-const MatchCard = ({
-  matchId,
-  league,
-  team1,
-  team2,
-  score1,
-  score2,
-  time,
-  isLive,
-  odds,
-}: MatchCardProps) => {
+const MatchCard = ({ match }: MatchCardProps) => {
+  const navigate = useNavigate();
+  const { matchId, league, team1, team2, score1, score2, time, isLive, odds } = match;
   const matchLabel = `${team1} vs ${team2}`;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/30 transition">
+    <div
+      className="bg-card border border-border rounded-lg p-3 hover:border-primary/30 transition cursor-pointer"
+      onClick={() => navigate(`/match/${matchId}`)}
+    >
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
           {league}
@@ -59,12 +48,12 @@ const MatchCard = ({
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
         <OddsButton label="1" odds={odds.home} selectionId={`${matchId}-home`} matchLabel={matchLabel} pick={`${team1} Win`} />
         <OddsButton label="X" odds={odds.draw} selectionId={`${matchId}-draw`} matchLabel={matchLabel} pick="Draw" />
         <OddsButton label="2" odds={odds.away} selectionId={`${matchId}-away`} matchLabel={matchLabel} pick={`${team2} Win`} />
         <button className="ml-auto text-xs text-muted-foreground hover:text-primary transition">
-          +42
+          +{match.totalMarkets || 42}
         </button>
       </div>
     </div>
