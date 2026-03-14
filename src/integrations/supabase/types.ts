@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bets: {
+        Row: {
+          id: string
+          placed_at: string
+          potential_win: number
+          selections: Json
+          stake: number
+          status: string
+          total_odds: number
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          placed_at?: string
+          potential_win: number
+          selections: Json
+          stake: number
+          status?: string
+          total_odds: number
+          user_id: string
+        }
+        Update: {
+          id?: string
+          placed_at?: string
+          potential_win?: number
+          selections?: Json
+          stake?: number
+          status?: string
+          total_odds?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
