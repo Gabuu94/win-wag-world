@@ -1,11 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -24,14 +22,8 @@ serve(async (req) => {
     let apiUrl: string;
 
     if (sport === 'sports') {
-      // List available sports
       apiUrl = `https://api.the-odds-api.com/v4/sports/?apiKey=${API_KEY}`;
-    } else if (sport === 'scores') {
-      // Live scores
-      const sportKey = url.searchParams.get('sportKey') || 'upcoming';
-      apiUrl = `https://api.the-odds-api.com/v4/sports/${sportKey}/scores/?apiKey=${API_KEY}&daysFrom=1`;
     } else {
-      // Odds for a specific sport or upcoming
       apiUrl = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${regions}&markets=${markets}&oddsFormat=decimal`;
     }
 
