@@ -75,14 +75,6 @@ export function useOdds(sportKey: string = "upcoming") {
       setLoading(true);
       setError(null);
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("fetch-odds", {
-          body: null,
-          method: "GET",
-          headers: {},
-        });
-
-        // supabase.functions.invoke uses POST by default, let's use fetch directly
-        const projectId = import.meta.env.VITE_SUPABASE_URL?.replace("https://", "").replace(".supabase.co", "");
         const baseUrl = import.meta.env.VITE_SUPABASE_URL;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
