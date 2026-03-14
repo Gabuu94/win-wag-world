@@ -1,14 +1,14 @@
-import { MatchData } from "@/data/matches";
+import { NormalizedMatch } from "@/hooks/useOdds";
 import OddsButton from "./OddsButton";
 import { useNavigate } from "react-router-dom";
 
 interface MatchCardProps {
-  match: MatchData;
+  match: NormalizedMatch;
 }
 
 const MatchCard = ({ match }: MatchCardProps) => {
   const navigate = useNavigate();
-  const { matchId, league, team1, team2, score1, score2, time, isLive, odds } = match;
+  const { matchId, league, team1, team2, time, isLive, odds } = match;
   const matchLabel = `${team1} vs ${team2}`;
 
   return (
@@ -17,9 +17,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
       onClick={() => navigate(`/match/${matchId}`)}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-          {league}
-        </span>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{league}</span>
         <div className="flex items-center gap-1.5">
           {isLive && (
             <span className="flex items-center gap-1">
@@ -35,15 +33,9 @@ const MatchCard = ({ match }: MatchCardProps) => {
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium">{team1}</span>
-            {isLive && score1 !== undefined && (
-              <span className="text-sm font-bold text-primary">{score1}</span>
-            )}
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{team2}</span>
-            {isLive && score2 !== undefined && (
-              <span className="text-sm font-bold text-primary">{score2}</span>
-            )}
           </div>
         </div>
       </div>
@@ -53,7 +45,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
         <OddsButton label="X" odds={odds.draw} selectionId={`${matchId}-draw`} matchLabel={matchLabel} pick="Draw" />
         <OddsButton label="2" odds={odds.away} selectionId={`${matchId}-away`} matchLabel={matchLabel} pick={`${team2} Win`} />
         <button className="ml-auto text-xs text-muted-foreground hover:text-primary transition">
-          +{match.totalMarkets || 42}
+          +{match.totalMarkets}
         </button>
       </div>
     </div>

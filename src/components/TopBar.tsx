@@ -3,36 +3,45 @@ import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const TopBar = () => {
-  const { user, isLoggedIn, logout, setShowAuthModal, setShowDepositModal } = useAuth();
+const SPORT_TABS = [
+  { key: "upcoming", label: "⚽ Football" },
+  { key: "basketball_nba", label: "🏀 Basketball" },
+  { key: "tennis_atp_french_open", label: "🎾 Tennis" },
+  { key: "icehockey_nhl", label: "🏒 Hockey" },
+  { key: "mma_mixed_martial_arts", label: "🥊 MMA" },
+  { key: "americanfootball_nfl", label: "🏈 NFL" },
+  { key: "baseball_mlb", label: "⚾ Baseball" },
+];
+
+interface TopBarProps {
+  activeSport?: string;
+  onSportChange?: (sport: string) => void;
+}
+
+const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
+  const { profile, isLoggedIn, logout, setShowAuthModal, setShowDepositModal } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
-      {/* Top promo bar */}
       <div className="bg-primary/10 border-b border-primary/20 px-4 py-1.5 text-center">
         <span className="text-sm text-primary font-medium">
           🎁 Welcome Bonus — Get up to <span className="font-bold">$1500</span> on your first deposit!
         </span>
       </div>
 
-      {/* Main nav */}
       <div className="flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-4">
           <button className="lg:hidden text-foreground">
             <Menu className="w-5 h-5" />
           </button>
-          <h1
-            className="font-display text-2xl font-bold tracking-wider cursor-pointer"
-            onClick={() => navigate("/")}
-          >
+          <h1 className="font-display text-2xl font-bold tracking-wider cursor-pointer" onClick={() => navigate("/")}>
             <span className="text-primary">BET</span>
             <span className="text-accent">KING</span>
           </h1>
         </div>
 
-        {/* Search */}
         <div className="hidden md:flex items-center bg-secondary rounded-md px-3 py-2 w-80">
           <Search className="w-4 h-4 text-muted-foreground mr-2" />
           <input
@@ -42,22 +51,18 @@ const TopBar = () => {
           />
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-3">
-          {isLoggedIn && (
+          {isLoggedIn && profile && (
             <div className="hidden sm:flex items-center gap-2 bg-secondary rounded-md px-3 py-2">
               <Wallet className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">${user!.balance.toFixed(2)}</span>
+              <span className="text-sm font-medium">${profile.balance.toFixed(2)}</span>
             </div>
           )}
 
           <button
             onClick={() => {
-              if (!isLoggedIn) {
-                setShowAuthModal(true);
-              } else {
-                setShowDepositModal(true);
-              }
+              if (!isLoggedIn) setShowAuthModal(true);
+              else setShowDepositModal(true);
             }}
             className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-semibold hover:brightness-110 transition"
           >
@@ -68,34 +73,28 @@ const TopBar = () => {
             <Bell className="w-5 h-5" />
           </button>
 
-          {/* User button */}
           <div className="relative">
             <button
               onClick={() => {
-                if (!isLoggedIn) {
-                  setShowAuthModal(true);
-                } else {
-                  setShowUserMenu(!showUserMenu);
-                }
+                if (!isLoggedIn) setShowAuthModal(true);
+                else setShowUserMenu(!showUserMenu);
               }}
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition"
             >
               <User className="w-5 h-5" />
-              {isLoggedIn && (
+              {isLoggedIn && profile && (
                 <span className="hidden sm:inline text-xs font-medium text-foreground">
-                  {user!.username}
+                  {profile.username}
                 </span>
               )}
             </button>
 
-            {/* Dropdown */}
-            {showUserMenu && isLoggedIn && (
+            {showUserMenu && isLoggedIn && profile && (
               <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
                 <div className="p-3 border-b border-border">
-                  <p className="text-sm font-medium">{user!.username}</p>
-                  <p className="text-xs text-muted-foreground">{user!.email}</p>
+                  <p className="text-sm font-medium">{profile.username}</p>
                   <p className="text-xs text-primary font-bold mt-1">
-                    Balance: ${user!.balance.toFixed(2)}
+                    Balance: ${profile.balance.toFixed(2)}
                   </p>
                 </div>
                 <button
@@ -122,22 +121,20 @@ const TopBar = () => {
         </div>
       </div>
 
-      {/* Sport tabs */}
       <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto border-t border-border">
-        {["⚽ Football", "🏀 Basketball", "🎾 Tennis", "🏒 Hockey", "🥊 Boxing/MMA", "🏈 American Football", "⚾ Baseball", "🏐 Volleyball"].map(
-          (sport, i) => (
-            <button
-              key={sport}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                i === 0
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              {sport}
-            </button>
-          )
-        )}
+        {SPORT_TABS.map((sport) => (
+          <button
+            key={sport.key}
+            onClick={() => onSportChange?.(sport.key)}
+            className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium transition ${
+              activeSport === sport.key
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            {sport.label}
+          </button>
+        ))}
       </div>
     </header>
   );

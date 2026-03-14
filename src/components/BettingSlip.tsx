@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 const BettingSlip = () => {
   const { selections, removeSelection, clearAll, stake, setStake } = useBetting();
-  const { isLoggedIn, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
+  const { isLoggedIn, profile, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
 
   const totalOdds = selections.length > 0
     ? selections.reduce((acc, b) => acc * b.odds, 1)
@@ -13,7 +13,7 @@ const BettingSlip = () => {
 
   const potentialWin = stake * totalOdds;
 
-  const handlePlaceBet = () => {
+  const handlePlaceBet = async () => {
     if (selections.length === 0) {
       toast.error("Add selections to your bet slip first!");
       return;
@@ -23,7 +23,7 @@ const BettingSlip = () => {
       setShowAuthModal(true);
       return;
     }
-    if (!user || user.balance < stake) {
+    if (!profile || profile.balance < stake) {
       toast.error("Insufficient balance. Please deposit funds.");
       setShowDepositModal(true);
       return;
@@ -33,7 +33,7 @@ const BettingSlip = () => {
       return;
     }
 
-    const ok = placeBet({
+    const ok = await placeBet({
       selections: selections.map((s) => ({ matchLabel: s.matchLabel, pick: s.pick, odds: s.odds })),
       stake,
       totalOdds,
@@ -52,27 +52,20 @@ const BettingSlip = () => {
 
   return (
     <aside className="hidden xl:flex flex-col w-72 bg-card border-l border-border h-[calc(100vh-8rem)]">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="font-display text-sm font-bold uppercase tracking-wider">
-          Bet Slip
-        </h3>
+        <h3 className="font-display text-sm font-bold uppercase tracking-wider">Bet Slip</h3>
         <div className="flex items-center gap-2">
           <span className="bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {selections.length}
           </span>
           {selections.length > 0 && (
-            <button
-              onClick={clearAll}
-              className="text-muted-foreground hover:text-destructive transition"
-            >
+            <button onClick={clearAll} className="text-muted-foreground hover:text-destructive transition">
               <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-border">
         {["Single", "Accumulator", "System"].map((tab, i) => (
           <button
@@ -88,7 +81,6 @@ const BettingSlip = () => {
         ))}
       </div>
 
-      {/* Bets */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {selections.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
@@ -97,33 +89,22 @@ const BettingSlip = () => {
           </div>
         ) : (
           selections.map((bet) => (
-            <div
-              key={bet.id}
-              className="bg-secondary rounded-md p-3 relative animate-in slide-in-from-right-2 duration-200"
-            >
-              <button
-                onClick={() => removeSelection(bet.id)}
-                className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition"
-              >
+            <div key={bet.id} className="bg-secondary rounded-md p-3 relative animate-in slide-in-from-right-2 duration-200">
+              <button onClick={() => removeSelection(bet.id)} className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition">
                 <X className="w-3.5 h-3.5" />
               </button>
               <p className="text-[10px] text-muted-foreground mb-1">{bet.matchLabel}</p>
               <p className="text-sm font-medium mb-1">{bet.pick}</p>
-              <span className="text-primary font-bold text-sm">
-                {bet.odds.toFixed(2)}
-              </span>
+              <span className="text-primary font-bold text-sm">{bet.odds.toFixed(2)}</span>
             </div>
           ))
         )}
       </div>
 
-      {/* Footer */}
       <div className="border-t border-border p-4 space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Total Odds</span>
-          <span className="font-bold text-primary">
-            {totalOdds > 0 ? totalOdds.toFixed(2) : "—"}
-          </span>
+          <span className="font-bold text-primary">{totalOdds > 0 ? totalOdds.toFixed(2) : "—"}</span>
         </div>
 
         <div className="flex items-center bg-secondary rounded-md overflow-hidden">
@@ -137,18 +118,16 @@ const BettingSlip = () => {
           />
         </div>
 
-        {isLoggedIn && (
+        {isLoggedIn && profile && (
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Balance</span>
-            <span className="font-medium text-foreground">${user!.balance.toFixed(2)}</span>
+            <span className="font-medium text-foreground">${profile.balance.toFixed(2)}</span>
           </div>
         )}
 
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Potential Win</span>
-          <span className="font-bold text-accent">
-            {potentialWin > 0 ? `$${potentialWin.toFixed(2)}` : "—"}
-          </span>
+          <span className="font-bold text-accent">{potentialWin > 0 ? `$${potentialWin.toFixed(2)}` : "—"}</span>
         </div>
 
         <button

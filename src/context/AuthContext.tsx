@@ -1,32 +1,24 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
-export interface UserData {
-  id: string;
+export interface ProfileData {
   username: string;
-  email: string;
   balance: number;
-  betHistory: PlacedBet[];
-}
-
-export interface PlacedBet {
-  id: string;
-  selections: { matchLabel: string; pick: string; odds: number }[];
-  stake: number;
-  totalOdds: number;
-  potentialWin: number;
-  status: "pending" | "won" | "lost";
-  placedAt: string;
 }
 
 interface AuthContextType {
-  user: UserData | null;
+  user: User | null;
+  profile: ProfileData | null;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => boolean;
-  signup: (username: string, email: string, password: string) => boolean;
-  logout: () => void;
-  deposit: (amount: number) => void;
-  withdraw: (amount: number) => boolean;
-  placeBet: (bet: Omit<PlacedBet, "id" | "status" | "placedAt">) => boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  signup: (username: string, email: string, password: string) => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
+  deposit: (amount: number) => Promise<boolean>;
+  withdraw: (amount: number) => Promise<boolean>;
+  placeBet: (bet: { selections: { matchLabel: string; pick: string; odds: number }[]; stake: number; totalOdds: number; potentialWin: number }) => Promise<boolean>;
+  refreshProfile: () => Promise<void>;
   showAuthModal: boolean;
   setShowAuthModal: (v: boolean) => void;
   showDepositModal: boolean;
@@ -41,113 +33,140 @@ export const useAuth = () => {
   return ctx;
 };
 
-const USERS_KEY = "betking_users";
-const CURRENT_USER_KEY = "betking_current_user";
-
-function getStoredUsers(): Record<string, { password: string; data: UserData }> {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "{}");
-  } catch { return {}; }
-}
-
-function saveUsers(users: Record<string, { password: string; data: UserData }>) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserData | null>(() => {
-    try {
-      const saved = localStorage.getItem(CURRENT_USER_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-      const users = getStoredUsers();
-      if (users[user.email]) {
-        users[user.email].data = user;
-        saveUsers(users);
-      }
-    } else {
-      localStorage.removeItem(CURRENT_USER_KEY);
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("username, balance")
+      .eq("user_id", userId)
+      .single();
+    if (data) {
+      setProfile({ username: data.username, balance: Number(data.balance) });
     }
-  }, [user]);
-
-  const login = useCallback((email: string, password: string) => {
-    const users = getStoredUsers();
-    const entry = users[email.toLowerCase()];
-    if (!entry || entry.password !== password) return false;
-    setUser(entry.data);
-    return true;
   }, []);
 
-  const signup = useCallback((username: string, email: string, password: string) => {
-    const users = getStoredUsers();
-    const key = email.toLowerCase();
-    if (users[key]) return false;
-    const newUser: UserData = {
-      id: crypto.randomUUID(),
-      username,
-      email: key,
-      balance: 0,
-      betHistory: [],
-    };
-    users[key] = { password, data: newUser };
-    saveUsers(users);
-    setUser(newUser);
-    return true;
-  }, []);
+  const refreshProfile = useCallback(async () => {
+    if (user) await fetchProfile(user.id);
+  }, [user, fetchProfile]);
 
-  const logout = useCallback(() => {
-    setUser(null);
-  }, []);
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session: Session | null) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          // Use setTimeout to avoid Supabase deadlock
+          setTimeout(() => fetchProfile(session.user.id), 0);
+        } else {
+          setProfile(null);
+        }
+        setLoading(false);
+      }
+    );
 
-  const deposit = useCallback((amount: number) => {
-    setUser((prev) => prev ? { ...prev, balance: prev.balance + amount } : prev);
-  }, []);
-
-  const withdraw = useCallback((amount: number) => {
-    let success = false;
-    setUser((prev) => {
-      if (!prev || prev.balance < amount) return prev;
-      success = true;
-      return { ...prev, balance: prev.balance - amount };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+      setLoading(false);
     });
-    return success;
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return {};
   }, []);
 
-  const placeBet = useCallback((bet: Omit<PlacedBet, "id" | "status" | "placedAt">) => {
-    let success = false;
-    setUser((prev) => {
-      if (!prev || prev.balance < bet.stake) return prev;
-      success = true;
-      const newBet: PlacedBet = {
-        ...bet,
-        id: crypto.randomUUID(),
-        status: "pending",
-        placedAt: new Date().toISOString(),
-      };
-      return {
-        ...prev,
-        balance: prev.balance - bet.stake,
-        betHistory: [newBet, ...prev.betHistory],
-      };
+  const signup = useCallback(async (username: string, email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username } },
     });
-    return success;
+    if (error) return { error: error.message };
+    return {};
   }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
+
+  const deposit = useCallback(async (amount: number) => {
+    if (!user || !profile) return false;
+    const newBalance = profile.balance + amount;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ balance: newBalance })
+      .eq("user_id", user.id);
+    if (error) return false;
+    setProfile((prev) => prev ? { ...prev, balance: newBalance } : prev);
+    return true;
+  }, [user, profile]);
+
+  const withdraw = useCallback(async (amount: number) => {
+    if (!user || !profile || profile.balance < amount) return false;
+    const newBalance = profile.balance - amount;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ balance: newBalance })
+      .eq("user_id", user.id);
+    if (error) return false;
+    setProfile((prev) => prev ? { ...prev, balance: newBalance } : prev);
+    return true;
+  }, [user, profile]);
+
+  const placeBet = useCallback(async (bet: { selections: { matchLabel: string; pick: string; odds: number }[]; stake: number; totalOdds: number; potentialWin: number }) => {
+    if (!user || !profile || profile.balance < bet.stake) return false;
+    
+    const newBalance = profile.balance - bet.stake;
+    
+    // Insert bet and update balance
+    const { error: betError } = await supabase.from("bets").insert({
+      user_id: user.id,
+      selections: bet.selections as any,
+      stake: bet.stake,
+      total_odds: bet.totalOdds,
+      potential_win: bet.potentialWin,
+    });
+    if (betError) return false;
+
+    const { error: balError } = await supabase
+      .from("profiles")
+      .update({ balance: newBalance })
+      .eq("user_id", user.id);
+    if (balError) return false;
+
+    setProfile((prev) => prev ? { ...prev, balance: newBalance } : prev);
+    return true;
+  }, [user, profile]);
 
   return (
     <AuthContext.Provider
       value={{
-        user, isLoggedIn: !!user,
-        login, signup, logout,
-        deposit, withdraw, placeBet,
-        showAuthModal, setShowAuthModal,
-        showDepositModal, setShowDepositModal,
+        user,
+        profile,
+        isLoggedIn: !!user,
+        loading,
+        login,
+        signup,
+        logout,
+        deposit,
+        withdraw,
+        placeBet,
+        refreshProfile,
+        showAuthModal,
+        setShowAuthModal,
+        showDepositModal,
+        setShowDepositModal,
       }}
     >
       {children}
