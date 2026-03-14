@@ -2,10 +2,40 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import TopBar from "@/components/TopBar";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface BetRow {
+  id: string;
+  selections: { matchLabel: string; pick: string; odds: number }[];
+  stake: number;
+  total_odds: number;
+  potential_win: number;
+  status: string;
+  placed_at: string;
+}
 
 const BetHistory = () => {
   const { user, isLoggedIn, setShowAuthModal } = useAuth();
   const navigate = useNavigate();
+  const [bets, setBets] = useState<BetRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchBets = async () => {
+      const { data } = await supabase
+        .from("bets")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("placed_at", { ascending: false });
+      if (data) {
+        setBets(data.map((b: any) => ({ ...b, selections: b.selections as any })));
+      }
+      setLoading(false);
+    };
+    fetchBets();
+  }, [user]);
 
   if (!isLoggedIn) {
     return (
@@ -38,23 +68,20 @@ const BetHistory = () => {
           <ArrowLeft className="w-4 h-4" /> Back to matches
         </button>
 
-        <h2 className="font-display text-2xl font-bold uppercase tracking-wider mb-4">
-          Bet History
-        </h2>
+        <h2 className="font-display text-2xl font-bold uppercase tracking-wider mb-4">Bet History</h2>
 
-        {user!.betHistory.length === 0 ? (
+        {loading ? (
+          <p className="text-muted-foreground text-center py-8">Loading...</p>
+        ) : bets.length === 0 ? (
           <div className="bg-card border border-border rounded-lg p-8 text-center">
             <p className="text-muted-foreground">No bets placed yet.</p>
-            <button
-              onClick={() => navigate("/")}
-              className="text-primary text-sm hover:underline mt-2"
-            >
+            <button onClick={() => navigate("/")} className="text-primary text-sm hover:underline mt-2">
               Browse matches →
             </button>
           </div>
         ) : (
           <div className="space-y-3">
-            {user!.betHistory.map((bet) => (
+            {bets.map((bet) => (
               <div key={bet.id} className="bg-card border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${
@@ -67,7 +94,7 @@ const BetHistory = () => {
                     {bet.status}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(bet.placedAt).toLocaleString()}
+                    {new Date(bet.placed_at).toLocaleString()}
                   </span>
                 </div>
 
@@ -90,7 +117,7 @@ const BetHistory = () => {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Potential Win: </span>
-                    <span className="font-bold text-accent">${bet.potentialWin.toFixed(2)}</span>
+                    <span className="font-bold text-accent">${bet.potential_win.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

@@ -9,33 +9,40 @@ const AuthModal = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (!showAuthModal) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      const ok = login(email, password);
-      if (ok) {
-        toast.success("Welcome back!");
-        setShowAuthModal(false);
-        resetForm();
+    setSubmitting(true);
+    try {
+      if (isLogin) {
+        const result = await login(email, password);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success("Welcome back!");
+          setShowAuthModal(false);
+          resetForm();
+        }
       } else {
-        toast.error("Invalid email or password");
+        if (!username.trim()) {
+          toast.error("Username is required");
+          setSubmitting(false);
+          return;
+        }
+        const result = await signup(username, email, password);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success("Account created! Welcome to BetKing!");
+          setShowAuthModal(false);
+          resetForm();
+        }
       }
-    } else {
-      if (!username.trim()) {
-        toast.error("Username is required");
-        return;
-      }
-      const ok = signup(username, email, password);
-      if (ok) {
-        toast.success("Account created! Welcome to BetKing!");
-        setShowAuthModal(false);
-        resetForm();
-      } else {
-        toast.error("An account with this email already exists");
-      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -48,7 +55,6 @@ const AuthModal = () => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="bg-card border border-border rounded-xl w-full max-w-md mx-4 overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-display text-xl font-bold uppercase tracking-wider">
             {isLogin ? "Sign In" : "Create Account"}
@@ -61,7 +67,6 @@ const AuthModal = () => {
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!isLogin && (
             <div className="relative">
@@ -98,15 +103,16 @@ const AuthModal = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
               required
-              minLength={4}
+              minLength={6}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green"
+            disabled={submitting}
+            className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40"
           >
-            {isLogin ? "Sign In" : "Create Account"}
+            {submitting ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
           </button>
 
           <p className="text-center text-sm text-muted-foreground">
