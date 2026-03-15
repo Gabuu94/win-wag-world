@@ -1,16 +1,15 @@
 import MatchCard from "./MatchCard";
 import HeroBanner from "./HeroBanner";
-import { useOdds, NormalizedMatch } from "@/hooks/useOdds";
-import { Loader2 } from "lucide-react";
+import { useOdds } from "@/hooks/useOdds";
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface LiveMatchesFeedProps {
   sportKey?: string;
 }
 
 const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
-  const { matches, loading, error } = useOdds(sportKey);
+  const { matches, loading, error, lastUpdated, refetch } = useOdds(sportKey);
 
-  const now = new Date();
   const liveMatches = matches.filter((m) => m.isLive);
   const upcomingMatches = matches.filter((m) => !m.isLive);
 
@@ -18,7 +17,23 @@ const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
     <main className="flex-1 overflow-y-auto p-4 h-[calc(100vh-8rem)]">
       <HeroBanner />
 
-      {loading && (
+      {/* Last updated + refresh */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs text-muted-foreground">
+          {lastUpdated && `Updated ${lastUpdated.toLocaleTimeString()}`}
+          {matches.length > 0 && ` · ${matches.length} events`}
+        </div>
+        <button
+          onClick={refetch}
+          disabled={loading}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
+      </div>
+
+      {loading && matches.length === 0 && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
           <span className="text-muted-foreground text-sm">Loading live odds...</span>
@@ -28,11 +43,13 @@ const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4 text-center">
           <p className="text-sm text-destructive">{error}</p>
-          <p className="text-xs text-muted-foreground mt-1">Odds data will refresh automatically</p>
+          <button onClick={refetch} className="text-xs text-primary hover:underline mt-1">
+            Try again
+          </button>
         </div>
       )}
 
-      {!loading && !error && (
+      {!loading || matches.length > 0 ? (
         <>
           {liveMatches.length > 0 && (
             <div className="mb-6">
@@ -52,7 +69,7 @@ const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <h2 className="font-display text-lg font-bold uppercase tracking-wider">
-                {upcomingMatches.length > 0 ? "Upcoming Matches" : "No Matches Found"}
+                {upcomingMatches.length > 0 ? "Upcoming Matches" : matches.length === 0 && !loading ? "No Matches Found" : ""}
               </h2>
               {upcomingMatches.length > 0 && (
                 <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{upcomingMatches.length}</span>
@@ -65,7 +82,7 @@ const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </main>
   );
 };
