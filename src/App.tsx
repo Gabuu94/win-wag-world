@@ -16,24 +16,24 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <BettingProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AuthModal />
-          <DepositModal />
-          <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <BettingProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AuthModal />
+            <DepositModal />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/match/:id" element={<MatchDetail />} />
               <Route path="/history" element={<BetHistory />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </BettingProvider>
-    </AuthProvider>
+          </TooltipProvider>
+        </BettingProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
