@@ -11,7 +11,7 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar activeSport={activeSport} onSportChange={setActiveSport} />
       <div className="flex flex-1 overflow-hidden">
-        <SportsSidebar />
+        <SportsSidebar activeSport={activeSport} onSportChange={setActiveSport} />
         <LiveMatchesFeed sportKey={activeSport} />
         <BettingSlip />
       </div>

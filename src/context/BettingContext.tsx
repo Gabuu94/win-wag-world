@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 export interface BetSelection {
-  id: string; // matchId + pick
-  matchLabel: string; // "Team1 vs Team2"
-  pick: string; // "Home", "Draw", "Away"
+  id: string;
+  matchLabel: string;
+  pick: string;
   odds: number;
 }
 
@@ -15,6 +15,7 @@ interface BettingContextType {
   isSelected: (id: string) => boolean;
   stake: number;
   setStake: (v: number) => void;
+  loadFromCode: (selections: BetSelection[]) => void;
 }
 
 const BettingContext = createContext<BettingContextType | null>(null);
@@ -33,7 +34,6 @@ export const BettingProvider = ({ children }: { children: ReactNode }) => {
     setSelections((prev) => {
       const exists = prev.find((s) => s.id === selection.id);
       if (exists) return prev.filter((s) => s.id !== selection.id);
-      // Remove any existing selection from the same match (only one pick per match)
       const matchPrefix = selection.id.split("-").slice(0, -1).join("-");
       const filtered = prev.filter(
         (s) => !s.id.startsWith(matchPrefix) || s.id === selection.id
@@ -53,9 +53,13 @@ export const BettingProvider = ({ children }: { children: ReactNode }) => {
     [selections]
   );
 
+  const loadFromCode = useCallback((newSelections: BetSelection[]) => {
+    setSelections(newSelections);
+  }, []);
+
   return (
     <BettingContext.Provider
-      value={{ selections, toggleSelection, removeSelection, clearAll, isSelected, stake, setStake }}
+      value={{ selections, toggleSelection, removeSelection, clearAll, isSelected, stake, setStake, loadFromCode }}
     >
       {children}
     </BettingContext.Provider>

@@ -1,11 +1,14 @@
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, Copy, ClipboardPaste, Share2 } from "lucide-react";
 import { useBetting } from "@/context/BettingContext";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const BettingSlip = () => {
-  const { selections, removeSelection, clearAll, stake, setStake } = useBetting();
+  const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
   const { isLoggedIn, profile, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
 
   const totalOdds = selections.length > 0
     ? selections.reduce((acc, b) => acc * b.odds, 1)
@@ -50,6 +53,35 @@ const BettingSlip = () => {
     }
   };
 
+  const generateCode = () => {
+    if (selections.length === 0) {
+      toast.error("No selections to share");
+      return;
+    }
+    const code = btoa(JSON.stringify(selections));
+    navigator.clipboard.writeText(code);
+    toast.success("Betslip code copied to clipboard!");
+  };
+
+  const handleLoadCode = () => {
+    if (!codeInput.trim()) return;
+    try {
+      const decoded = JSON.parse(atob(codeInput.trim()));
+      if (Array.isArray(decoded) && decoded.length > 0) {
+        loadFromCode(decoded);
+        toast.success(`Loaded ${decoded.length} selection(s) from code`);
+        setCodeInput("");
+        setShowCodeInput(false);
+      } else {
+        toast.error("Invalid betslip code");
+      }
+    } catch {
+      toast.error("Invalid betslip code");
+    }
+  };
+
+  const quickStakes = [5, 10, 25, 50, 100];
+
   return (
     <aside className="hidden xl:flex flex-col w-72 bg-card border-l border-border h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -59,9 +91,14 @@ const BettingSlip = () => {
             {selections.length}
           </span>
           {selections.length > 0 && (
-            <button onClick={clearAll} className="text-muted-foreground hover:text-destructive transition">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <>
+              <button onClick={generateCode} className="text-muted-foreground hover:text-primary transition" title="Copy betslip code">
+                <Share2 className="w-4 h-4" />
+              </button>
+              <button onClick={clearAll} className="text-muted-foreground hover:text-destructive transition" title="Clear all">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -79,6 +116,30 @@ const BettingSlip = () => {
             {tab}
           </button>
         ))}
+      </div>
+
+      {/* Load Code Section */}
+      <div className="px-3 pt-2">
+        <button
+          onClick={() => setShowCodeInput(!showCodeInput)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition w-full"
+        >
+          <ClipboardPaste className="w-3.5 h-3.5" />
+          <span>Load betslip code</span>
+        </button>
+        {showCodeInput && (
+          <div className="flex gap-1.5 mt-1.5">
+            <input
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              placeholder="Paste code here..."
+              className="flex-1 bg-secondary text-foreground text-xs px-2 py-1.5 rounded-md outline-none placeholder:text-muted-foreground"
+            />
+            <button onClick={handleLoadCode} className="bg-primary text-primary-foreground text-xs px-2 py-1.5 rounded-md font-medium">
+              Load
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -105,6 +166,20 @@ const BettingSlip = () => {
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Total Odds</span>
           <span className="font-bold text-primary">{totalOdds > 0 ? totalOdds.toFixed(2) : "—"}</span>
+        </div>
+
+        <div className="flex gap-1.5">
+          {quickStakes.map((qs) => (
+            <button
+              key={qs}
+              onClick={() => setStake(qs)}
+              className={`flex-1 text-[10px] py-1 rounded transition ${
+                stake === qs ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              ${qs}
+            </button>
+          ))}
         </div>
 
         <div className="flex items-center bg-secondary rounded-md overflow-hidden">

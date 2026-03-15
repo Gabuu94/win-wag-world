@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 const HeroBanner = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden mb-4">
       <img
@@ -18,7 +21,10 @@ const HeroBanner = () => {
             <br />
             <span className="text-primary">Quarter Finals</span>
           </h2>
-          <button className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-bold hover:brightness-110 transition mt-1">
+          <button
+            onClick={() => navigate("/")}
+            className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-bold hover:brightness-110 transition mt-1"
+          >
             Bet Now →
           </button>
         </div>

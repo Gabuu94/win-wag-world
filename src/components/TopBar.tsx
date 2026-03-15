@@ -1,16 +1,19 @@
-import { Search, Bell, Wallet, User, Menu, LogOut, History } from "lucide-react";
+import { Search, Bell, Wallet, User, Menu, LogOut, History, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const SPORT_TABS = [
-  { key: "upcoming", label: "⚽ Football" },
-  { key: "basketball_nba", label: "🏀 Basketball" },
-  { key: "tennis_atp_french_open", label: "🎾 Tennis" },
+  { key: "upcoming", label: "🔥 All" },
+  { key: "soccer", label: "⚽ Football" },
+  { key: "basketball_nba", label: "🏀 NBA" },
   { key: "icehockey_nhl", label: "🏒 Hockey" },
   { key: "mma_mixed_martial_arts", label: "🥊 MMA" },
   { key: "americanfootball_nfl", label: "🏈 NFL" },
-  { key: "baseball_mlb", label: "⚾ Baseball" },
+  { key: "baseball_mlb", label: "⚾ MLB" },
+  { key: "tennis_atp_french_open", label: "🎾 Tennis" },
+  { key: "boxing_boxing", label: "🥊 Boxing" },
+  { key: "cricket_test_match", label: "🏏 Cricket" },
 ];
 
 interface TopBarProps {
@@ -21,7 +24,20 @@ interface TopBarProps {
 const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
   const { profile, isLoggedIn, logout, setShowAuthModal, setShowDepositModal } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -46,9 +62,16 @@ const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
           <Search className="w-4 h-4 text-muted-foreground mr-2" />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search events, teams, leagues..."
             className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full"
           />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -73,7 +96,7 @@ const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
             <Bell className="w-5 h-5" />
           </button>
 
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button
               onClick={() => {
                 if (!isLoggedIn) setShowAuthModal(true);
