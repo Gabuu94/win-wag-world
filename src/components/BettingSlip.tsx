@@ -1,10 +1,10 @@
-import { X, Trash2, Copy, ClipboardPaste, Share2 } from "lucide-react";
+import { X, Trash2, Share2, ClipboardPaste, ChevronUp } from "lucide-react";
 import { useBetting } from "@/context/BettingContext";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
 
-const BettingSlip = () => {
+const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
   const { isLoggedIn, profile, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
   const [showCodeInput, setShowCodeInput] = useState(false);
@@ -13,8 +13,8 @@ const BettingSlip = () => {
   const totalOdds = selections.length > 0
     ? selections.reduce((acc, b) => acc * b.odds, 1)
     : 0;
-
   const potentialWin = stake * totalOdds;
+  const betType = selections.length > 1 ? "Accumulator" : "Single";
 
   const handlePlaceBet = async () => {
     if (selections.length === 0) {
@@ -45,7 +45,7 @@ const BettingSlip = () => {
 
     if (ok) {
       toast.success(
-        `Bet placed! $${stake.toFixed(2)} on ${selections.length} selection(s) — Potential win: $${potentialWin.toFixed(2)}`
+        `${betType} placed! $${stake.toFixed(2)} on ${selections.length} selection(s) — Potential win: $${potentialWin.toFixed(2)}`
       );
       clearAll();
     } else {
@@ -83,9 +83,16 @@ const BettingSlip = () => {
   const quickStakes = [5, 10, 25, 50, 100];
 
   return (
-    <aside className="hidden xl:flex flex-col w-72 bg-card border-l border-border h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="font-display text-sm font-bold uppercase tracking-wider">Bet Slip</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider">Bet Slip</h3>
+          {selections.length > 1 && (
+            <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-bold uppercase">
+              {betType}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {selections.length}
@@ -103,22 +110,7 @@ const BettingSlip = () => {
         </div>
       </div>
 
-      <div className="flex border-b border-border">
-        {["Single", "Accumulator", "System"].map((tab, i) => (
-          <button
-            key={tab}
-            className={`flex-1 py-2 text-xs font-medium transition ${
-              (selections.length > 1 ? i === 1 : i === 0)
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Load Code Section */}
+      {/* Load Code */}
       <div className="px-3 pt-2">
         <button
           onClick={() => setShowCodeInput(!showCodeInput)}
@@ -142,6 +134,7 @@ const BettingSlip = () => {
         )}
       </div>
 
+      {/* Selections */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {selections.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
@@ -162,9 +155,10 @@ const BettingSlip = () => {
         )}
       </div>
 
+      {/* Footer */}
       <div className="border-t border-border p-4 space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Total Odds</span>
+          <span className="text-muted-foreground">Total Odds ({betType})</span>
           <span className="font-bold text-primary">{totalOdds > 0 ? totalOdds.toFixed(2) : "—"}</span>
         </div>
 
@@ -210,11 +204,69 @@ const BettingSlip = () => {
           disabled={selections.length === 0}
           className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          {!isLoggedIn ? "Sign In to Bet" : "Place Bet"}
+          {!isLoggedIn ? "Sign In to Bet" : `Place ${betType}`}
         </button>
       </div>
-    </aside>
+    </div>
   );
 };
+
+// Desktop sidebar version
+const BettingSlipDesktop = () => (
+  <aside className="hidden xl:flex flex-col w-72 bg-card border-l border-border h-[calc(100vh-8rem)]">
+    <BettingSlipContent />
+  </aside>
+);
+
+// Mobile floating button + drawer
+const BettingSlipMobile = () => {
+  const { selections } = useBetting();
+  const [open, setOpen] = useState(false);
+
+  const totalOdds = selections.length > 0
+    ? selections.reduce((acc, b) => acc * b.odds, 1)
+    : 0;
+
+  return (
+    <div className="xl:hidden">
+      {/* Floating button */}
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-4 right-4 z-50 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center gap-2 px-4 py-3 font-display font-bold text-sm uppercase glow-green"
+      >
+        <ChevronUp className="w-4 h-4" />
+        Slip
+        {selections.length > 0 && (
+          <span className="bg-accent text-accent-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            {selections.length}
+          </span>
+        )}
+        {totalOdds > 0 && (
+          <span className="text-xs opacity-80">{totalOdds.toFixed(2)}</span>
+        )}
+      </button>
+
+      {/* Drawer overlay */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex flex-col">
+          <div className="flex-1 bg-black/50" onClick={() => setOpen(false)} />
+          <div className="bg-card border-t border-border rounded-t-xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-center pt-2 pb-1">
+              <button onClick={() => setOpen(false)} className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+            </div>
+            <BettingSlipContent />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const BettingSlip = () => (
+  <>
+    <BettingSlipDesktop />
+    <BettingSlipMobile />
+  </>
+);
 
 export default BettingSlip;
