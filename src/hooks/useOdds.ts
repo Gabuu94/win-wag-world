@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { allMatches, type MatchData } from "@/data/matches";
 
 export interface OddsEvent {
   id: string;
@@ -29,6 +30,8 @@ export interface NormalizedMatch {
   totalMarkets: number;
   commenceTime: string;
 }
+
+const FALLBACK_NOTICE = "Live odds are temporarily unavailable — showing demo markets.";
 
 function getTimeUntil(commence: Date): string {
   const now = new Date();
@@ -74,66 +77,114 @@ function normalizeEvents(events: OddsEvent[]): NormalizedMatch[] {
     });
 }
 
+function matchesSport(match: MatchData, sportKey: string) {
+  if (sportKey === "upcoming") return true;
+  if (sportKey === "soccer" || sportKey.startsWith("soccer_")) return ["football", "soccer"].includes(match.sport);
+  if (sportKey.startsWith("basketball")) return match.sport === "basketball";
+  if (sportKey.startsWith("icehockey")) return ["hockey", "icehockey"].includes(match.sport);
+  if (sportKey.startsWith("americanfootball")) return match.sport === "americanfootball";
+  if (sportKey.startsWith("baseball")) return match.sport === "baseball";
+  if (sportKey.startsWith("mma")) return match.sport === "mma";
+  if (sportKey.startsWith("boxing")) return ["boxing", "mma"].includes(match.sport);
+  if (sportKey.startsWith("tennis")) return match.sport === "tennis";
+  if (sportKey.startsWith("cricket")) return match.sport === "cricket";
+  if (sportKey.startsWith("golf")) return match.sport === "golf";
+  return false;
+}
+
+function getFallbackMatches(sportKey: string): NormalizedMatch[] {
+  const baseTime = Date.now();
+  const filteredMatches = allMatches.filter((match) => matchesSport(match, sportKey));
+  const sourceMatches = filteredMatches.length > 0 ? filteredMatches : allMatches;
+
+  return sourceMatches
+    .map((match, index) => {
+      const commenceTime = match.isLive
+        ? new Date(baseTime - (index + 1) * 15 * 60 * 1000).toISOString()
+        : new Date(baseTime + (index + 1) * 45 * 60 * 1000).toISOString();
+
+      return {
+        matchId: match.matchId,
+        league: match.league,
+        sport: match.sport,
+        team1: match.team1,
+        team2: match.team2,
+        time: match.isLive ? "LIVE" : getTimeUntil(new Date(commenceTime)),
+        isLive: match.isLive,
+        odds: match.odds,
+        totalMarkets: match.totalMarkets,
+        commenceTime,
+      };
+    })
+    .sort((a, b) => new Date(a.commenceTime).getTime() - new Date(b.commenceTime).getTime());
+}
+
 export function useOdds(sportKey: string = "upcoming") {
   const [matches, setMatches] = useState<NormalizedMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const applyFallback = useCallback(() => {
+    setMatches(getFallbackMatches(sportKey));
+    setError(null);
+    setNotice(FALLBACK_NOTICE);
+    setLastUpdated(new Date());
+  }, [sportKey]);
 
   const fetchOdds = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
     setError(null);
+    setNotice(null);
+
     try {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      // Map "soccer" to the Odds API key for all soccer
       let apiSport = sportKey;
       if (sportKey === "soccer") apiSport = "upcoming";
 
-      const response = await fetch(
-        `${baseUrl}/functions/v1/fetch-odds?sport=${apiSport}`,
-        {
-          headers: {
-            Authorization: `Bearer ${anonKey}`,
-            apikey: anonKey,
-          },
-        }
-      );
+      const response = await fetch(`${baseUrl}/functions/v1/fetch-odds?sport=${apiSport}`, {
+        headers: {
+          Authorization: `Bearer ${anonKey}`,
+          apikey: anonKey,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch odds: ${response.status}`);
       }
 
+      const quotaFallback = response.headers.get("x-odds-fallback") === "quota_exhausted";
       const events: OddsEvent[] = await response.json();
-      
-      // If filtering by "soccer", filter events to only soccer sports
+
       let filtered = events;
       if (sportKey === "soccer") {
         filtered = events.filter((e) => e.sport_key.startsWith("soccer"));
       }
 
+      if (quotaFallback) {
+        applyFallback();
+        return;
+      }
+
       setMatches(normalizeEvents(filtered));
       setLastUpdated(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch odds");
+    } catch {
+      applyFallback();
     } finally {
       setLoading(false);
     }
-  }, [sportKey]);
+  }, [applyFallback, sportKey]);
 
   useEffect(() => {
-    let cancelled = false;
+    void fetchOdds();
 
-    const doFetch = async () => {
-      await fetchOdds();
-    };
+    const interval = setInterval(() => {
+      void fetchOdds(true);
+    }, 30000);
 
-    doFetch();
-    // Refresh every 30 seconds for faster updates
-    const interval = setInterval(() => fetchOdds(true), 30000);
-
-    // Update countdown times every 10 seconds
     const timeInterval = setInterval(() => {
       setMatches((prev) =>
         prev.map((m) => ({
@@ -144,11 +195,10 @@ export function useOdds(sportKey: string = "upcoming") {
     }, 10000);
 
     return () => {
-      cancelled = true;
       clearInterval(interval);
       clearInterval(timeInterval);
     };
   }, [fetchOdds]);
 
-  return { matches, loading, error, lastUpdated, refetch: () => fetchOdds(true) };
+  return { matches, loading, error, notice, lastUpdated, refetch: () => fetchOdds(true) };
 }
