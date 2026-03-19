@@ -1,6 +1,7 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Expose-Headers': 'x-odds-fallback',
 };
 
 // Sports that only support outrights, not h2h
@@ -8,6 +9,12 @@ const OUTRIGHT_SPORTS = ['golf_', 'politics_', '_winner', '_championship'];
 
 function isOutrightSport(sport: string): boolean {
   return OUTRIGHT_SPORTS.some((s) => sport.includes(s));
+}
+
+function jsonResponse(data: unknown, extraHeaders: Record<string, string> = {}) {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extraHeaders },
+  });
 }
 
 Deno.serve(async (req) => {
@@ -31,7 +38,6 @@ Deno.serve(async (req) => {
     if (sport === 'sports') {
       apiUrl = `https://api.the-odds-api.com/v4/sports/?apiKey=${API_KEY}`;
     } else {
-      // Use outrights for sports that don't support h2h
       const markets = isOutrightSport(sport) ? 'outrights' : requestedMarkets;
       apiUrl = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${regions}&markets=${markets}&oddsFormat=decimal`;
     }
@@ -39,29 +45,28 @@ Deno.serve(async (req) => {
     const response = await fetch(apiUrl);
     if (!response.ok) {
       const text = await response.text();
-      // If market combo is invalid, retry with outrights
+
+      if (response.status === 401 && text.includes('OUT_OF_USAGE_CREDITS')) {
+        return jsonResponse([], { 'x-odds-fallback': 'quota_exhausted' });
+      }
+
       if (response.status === 422 && text.includes('INVALID_MARKET_COMBO')) {
         const fallbackUrl = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${regions}&markets=outrights&oddsFormat=decimal`;
         const fallbackResp = await fetch(fallbackUrl);
+
         if (fallbackResp.ok) {
           const data = await fallbackResp.json();
-          return new Response(JSON.stringify(data), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return jsonResponse(data);
         }
-        // If outrights also fails, return empty array
-        return new Response(JSON.stringify([]), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+
+        return jsonResponse([]);
       }
+
       throw new Error(`Odds API error [${response.status}]: ${text}`);
     }
 
     const data = await response.json();
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(data);
   } catch (error) {
     console.error('Error fetching odds:', error);
     return new Response(

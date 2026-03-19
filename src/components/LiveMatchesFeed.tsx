@@ -8,7 +8,7 @@ interface LiveMatchesFeedProps {
 }
 
 const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
-  const { matches, loading, error, lastUpdated, refetch } = useOdds(sportKey);
+  const { matches, loading, error, notice, lastUpdated, refetch } = useOdds(sportKey);
 
   const liveMatches = matches.filter((m) => m.isLive);
   const upcomingMatches = matches.filter((m) => !m.isLive);
@@ -17,7 +17,6 @@ const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
     <main className="flex-1 overflow-y-auto p-4 h-[calc(100vh-8rem)]">
       <HeroBanner />
 
-      {/* Last updated + refresh */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs text-muted-foreground">
           {lastUpdated && `Updated ${lastUpdated.toLocaleTimeString()}`}
@@ -32,6 +31,12 @@ const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
           Refresh
         </button>
       </div>
+
+      {notice && (
+        <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 mb-4 text-center">
+          <p className="text-sm text-foreground">{notice}</p>
+        </div>
+      )}
 
       {loading && matches.length === 0 && (
         <div className="flex items-center justify-center py-12">
