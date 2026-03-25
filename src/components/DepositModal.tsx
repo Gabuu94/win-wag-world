@@ -1,112 +1,350 @@
 import { useState } from "react";
-import { X, DollarSign, CreditCard, Landmark, Smartphone } from "lucide-react";
+import { X, DollarSign, Smartphone, Bitcoin, Copy, Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const presetAmounts = [10, 25, 50, 100, 250, 500];
+type PaymentTab = "mpesa" | "crypto";
 
-const paymentMethods = [
-  { id: "card", label: "Credit Card", icon: CreditCard },
-  { id: "bank", label: "Bank Transfer", icon: Landmark },
-  { id: "mobile", label: "Mobile Pay", icon: Smartphone },
+const cryptoCurrencies = [
+  { id: "btc", label: "Bitcoin", symbol: "BTC" },
+  { id: "eth", label: "Ethereum", symbol: "ETH" },
+  { id: "usdttrc20", label: "USDT (TRC20)", symbol: "USDT" },
+  { id: "ltc", label: "Litecoin", symbol: "LTC" },
 ];
 
+const presetAmountsKES = [100, 250, 500, 1000, 2500, 5000];
+const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
+
 const DepositModal = () => {
-  const { showDepositModal, setShowDepositModal, deposit, isLoggedIn, setShowAuthModal } = useAuth();
-  const [amount, setAmount] = useState(50);
-  const [method, setMethod] = useState("card");
-  const [processing, setProcessing] = useState(false);
+  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile } = useAuth();
+  const [tab, setTab] = useState<PaymentTab>("mpesa");
+
+  // Mpesa state
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [mpesaAmount, setMpesaAmount] = useState(500);
+  const [mpesaProcessing, setMpesaProcessing] = useState(false);
+  const [stkSent, setStkSent] = useState(false);
+
+  // Crypto state
+  const [cryptoAmount, setCryptoAmount] = useState(25);
+  const [selectedCrypto, setSelectedCrypto] = useState("btc");
+  const [cryptoProcessing, setCryptoProcessing] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    pay_address: string;
+    pay_amount: number;
+    pay_currency: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   if (!showDepositModal) return null;
 
-  const handleDeposit = async () => {
-    if (!isLoggedIn) {
+  const handleClose = () => {
+    setShowDepositModal(false);
+    setStkSent(false);
+    setPaymentDetails(null);
+  };
+
+  const handleMpesaDeposit = async () => {
+    if (!isLoggedIn || !user) {
       setShowDepositModal(false);
       setShowAuthModal(true);
       return;
     }
-    if (amount < 5) {
+    if (mpesaAmount < 10) {
+      toast.error("Minimum deposit is KES 10");
+      return;
+    }
+    if (!phoneNumber || phoneNumber.length < 9) {
+      toast.error("Enter a valid M-Pesa phone number");
+      return;
+    }
+
+    setMpesaProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mpesa-deposit", {
+        body: { phone_number: phoneNumber, amount: mpesaAmount, user_id: user.id },
+      });
+
+      if (error) throw error;
+      if (data?.success) {
+        setStkSent(true);
+        toast.success("STK Push sent! Check your phone to complete payment.");
+        // Poll for balance update
+        setTimeout(() => refreshProfile(), 15000);
+        setTimeout(() => refreshProfile(), 30000);
+      } else {
+        toast.error(data?.error || "Failed to initiate M-Pesa payment");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "M-Pesa deposit failed");
+    } finally {
+      setMpesaProcessing(false);
+    }
+  };
+
+  const handleCryptoDeposit = async () => {
+    if (!isLoggedIn || !user) {
+      setShowDepositModal(false);
+      setShowAuthModal(true);
+      return;
+    }
+    if (cryptoAmount < 5) {
       toast.error("Minimum deposit is $5");
       return;
     }
-    setProcessing(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    const ok = await deposit(amount);
-    setProcessing(false);
-    if (ok) {
-      toast.success(`$${amount.toFixed(2)} deposited successfully!`);
-      setShowDepositModal(false);
-    } else {
-      toast.error("Deposit failed. Please try again.");
+
+    setCryptoProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("crypto-deposit", {
+        body: { amount_usd: cryptoAmount, currency: selectedCrypto, user_id: user.id },
+      });
+
+      if (error) throw error;
+      if (data?.success) {
+        setPaymentDetails({
+          pay_address: data.pay_address,
+          pay_amount: data.pay_amount,
+          pay_currency: data.pay_currency,
+        });
+        toast.success("Payment address generated!");
+      } else {
+        toast.error(data?.error || "Failed to create crypto payment");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Crypto deposit failed");
+    } finally {
+      setCryptoProcessing(false);
+    }
+  };
+
+  const copyAddress = () => {
+    if (paymentDetails?.pay_address) {
+      navigator.clipboard.writeText(paymentDetails.pay_address);
+      setCopied(true);
+      toast.success("Address copied!");
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-card border border-border rounded-xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-display text-xl font-bold uppercase tracking-wider">Deposit Funds</h2>
-          <button onClick={() => setShowDepositModal(false)} className="text-muted-foreground hover:text-foreground transition">
+          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
-          <div>
-            <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Amount</label>
-            <div className="relative mb-3">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
-                className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition"
-                min={5}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {presetAmounts.map((a) => (
-                <button
-                  key={a}
-                  onClick={() => setAmount(a)}
-                  className={`py-2 rounded-md text-sm font-medium transition ${
-                    amount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"
-                  }`}
-                >
-                  ${a}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Payment Method</label>
-            <div className="space-y-2">
-              {paymentMethods.map((pm) => (
-                <button
-                  key={pm.id}
-                  onClick={() => setMethod(pm.id)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-md border transition ${
-                    method === pm.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:bg-muted"
-                  }`}
-                >
-                  <pm.icon className={`w-5 h-5 ${method === pm.id ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className="text-sm font-medium">{pm.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
+        {/* Tabs */}
+        <div className="flex border-b border-border">
           <button
-            onClick={handleDeposit}
-            disabled={processing || amount < 5}
-            className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => { setTab("mpesa"); setPaymentDetails(null); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold uppercase tracking-wider transition ${
+              tab === "mpesa"
+                ? "text-primary border-b-2 border-primary bg-primary/5"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            {processing ? "Processing..." : `Deposit $${amount.toFixed(2)}`}
+            <Smartphone className="w-4 h-4" /> M-Pesa
           </button>
+          <button
+            onClick={() => { setTab("crypto"); setStkSent(false); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold uppercase tracking-wider transition ${
+              tab === "crypto"
+                ? "text-primary border-b-2 border-primary bg-primary/5"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Bitcoin className="w-4 h-4" /> Crypto
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* M-Pesa Tab */}
+          {tab === "mpesa" && !stkSent && (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                  placeholder="0712345678 or 254712345678"
+                  className="w-full bg-secondary border border-border rounded-md px-4 py-3 text-foreground outline-none focus:border-primary transition"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Amount (KES)
+                </label>
+                <div className="relative mb-3">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">KES</span>
+                  <input
+                    type="number"
+                    value={mpesaAmount}
+                    onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition"
+                    min={10}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {presetAmountsKES.map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setMpesaAmount(a)}
+                      className={`py-2 rounded-md text-sm font-medium transition ${
+                        mpesaAmount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"
+                      }`}
+                    >
+                      KES {a.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={handleMpesaDeposit}
+                disabled={mpesaProcessing || mpesaAmount < 10 || !phoneNumber}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {mpesaProcessing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Sending STK Push...</>
+                ) : (
+                  `Deposit KES ${mpesaAmount.toLocaleString()}`
+                )}
+              </button>
+            </>
+          )}
+
+          {/* M-Pesa STK Sent Confirmation */}
+          {tab === "mpesa" && stkSent && (
+            <div className="text-center space-y-4 py-4">
+              <div className="w-16 h-16 mx-auto bg-primary/20 rounded-full flex items-center justify-center">
+                <Smartphone className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-display text-lg font-bold">Check Your Phone</h3>
+              <p className="text-sm text-muted-foreground">
+                An M-Pesa STK Push has been sent to your phone. Enter your PIN to complete the deposit.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Your balance will update automatically once payment is confirmed.
+              </p>
+              <button
+                onClick={() => { setStkSent(false); refreshProfile(); }}
+                className="w-full bg-secondary text-secondary-foreground py-3 rounded-md font-medium text-sm hover:bg-muted transition"
+              >
+                Make Another Deposit
+              </button>
+            </div>
+          )}
+
+          {/* Crypto Tab */}
+          {tab === "crypto" && !paymentDetails && (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Cryptocurrency
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {cryptoCurrencies.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedCrypto(c.id)}
+                      className={`p-3 rounded-md border text-sm font-medium transition ${
+                        selectedCrypto === c.id
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border bg-secondary text-secondary-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {c.symbol}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Amount (USD)
+                </label>
+                <div className="relative mb-3">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="number"
+                    value={cryptoAmount}
+                    onChange={(e) => setCryptoAmount(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition"
+                    min={5}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {presetAmountsUSD.map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setCryptoAmount(a)}
+                      className={`py-2 rounded-md text-sm font-medium transition ${
+                        cryptoAmount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"
+                      }`}
+                    >
+                      ${a}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={handleCryptoDeposit}
+                disabled={cryptoProcessing || cryptoAmount < 5}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {cryptoProcessing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating Address...</>
+                ) : (
+                  `Deposit $${cryptoAmount} via ${cryptoCurrencies.find((c) => c.id === selectedCrypto)?.symbol}`
+                )}
+              </button>
+            </>
+          )}
+
+          {/* Crypto Payment Details */}
+          {tab === "crypto" && paymentDetails && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto bg-primary/20 rounded-full flex items-center justify-center mb-3">
+                  <Bitcoin className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display text-lg font-bold">Send Payment</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Send exactly <span className="text-foreground font-bold">{paymentDetails.pay_amount} {paymentDetails.pay_currency.toUpperCase()}</span> to:
+                </p>
+              </div>
+
+              <div className="bg-secondary border border-border rounded-md p-3">
+                <p className="text-xs text-muted-foreground mb-1">Deposit Address</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-foreground break-all flex-1">{paymentDetails.pay_address}</code>
+                  <button onClick={copyAddress} className="shrink-0 p-2 rounded-md bg-muted hover:bg-accent transition">
+                    {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Your balance will update automatically once the transaction is confirmed on the blockchain.
+              </p>
+
+              <button
+                onClick={() => { setPaymentDetails(null); refreshProfile(); }}
+                className="w-full bg-secondary text-secondary-foreground py-3 rounded-md font-medium text-sm hover:bg-muted transition"
+              >
+                Make Another Deposit
+              </button>
+            </div>
+          )}
 
           <p className="text-[10px] text-muted-foreground text-center">
-            This is a demo. No real money is involved.
+            Deposits are processed securely. Contact support for any issues.
           </p>
         </div>
       </div>
