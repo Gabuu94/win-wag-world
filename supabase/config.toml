@@ -2,3 +2,15 @@ project_id = "kgcnuucwqfasubtnqqmp"
 
 [functions.fetch-odds]
 verify_jwt = false
+
+[functions.mpesa-deposit]
+verify_jwt = false
+
+[functions.mpesa-callback]
+verify_jwt = false
+
+[functions.crypto-deposit]
+verify_jwt = false
+
+[functions.crypto-callback]
+verify_jwt = false
