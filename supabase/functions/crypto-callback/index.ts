@@ -16,9 +16,7 @@ Deno.serve(async (req) => {
 
     const { payment_status, order_id, price_amount } = body;
 
-    // NOWPayments statuses: waiting, confirming, confirmed, sending, partially_paid, finished, failed, refunded, expired
     if ((payment_status === 'finished' || payment_status === 'confirmed') && order_id) {
-      // Extract user_id from order_id format: deposit_{user_id}_{timestamp}
       const parts = order_id.split('_');
       if (parts.length >= 2) {
         const user_id = parts[1];
@@ -40,6 +38,16 @@ Deno.serve(async (req) => {
             .from('profiles')
             .update({ balance: newBalance })
             .eq('user_id', user_id);
+
+          // Record completed transaction
+          await supabase.from('transactions').insert({
+            user_id,
+            type: 'deposit',
+            method: 'crypto',
+            amount: Number(price_amount),
+            status: 'completed',
+            reference: order_id,
+          });
 
           console.log(`Crypto deposit: $${price_amount} credited to user ${user_id}`);
         }
