@@ -55,12 +55,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
 
+  // Realtime profile balance updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("profile-balance-realtime")
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "profiles",
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        const newData = payload.new as any;
+        if (newData) {
+          setProfile((prev) => prev ? { ...prev, balance: Number(newData.balance) } : prev);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session: Session | null) => {
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlock
           setTimeout(() => fetchProfile(session.user.id), 0);
         } else {
           setProfile(null);
@@ -129,7 +150,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const newBalance = profile.balance - bet.stake;
     
-    // Insert bet and update balance
     const { error: betError } = await supabase.from("bets").insert({
       user_id: user.id,
       selections: bet.selections as any,
