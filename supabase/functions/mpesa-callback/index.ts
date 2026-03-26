@@ -14,14 +14,14 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log('Mpesa callback received:', JSON.stringify(body));
 
-    const { status, amount, api_ref, mpesa_code } = body;
+    const { status, amount, api_ref, mpesa_code, checkout_id } = body;
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
 
     if (status === 'payment.success' && api_ref?.user_id) {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      );
-
       // Get current balance
       const { data: profile } = await supabase
         .from('profiles')
@@ -36,8 +36,28 @@ Deno.serve(async (req) => {
           .update({ balance: newBalance })
           .eq('user_id', api_ref.user_id);
 
+        // Record completed transaction
+        await supabase.from('transactions').insert({
+          user_id: api_ref.user_id,
+          type: 'deposit',
+          method: 'mpesa',
+          amount: Number(amount),
+          status: 'completed',
+          reference: mpesa_code || checkout_id || null,
+        });
+
         console.log(`Deposited KES ${amount} for user ${api_ref.user_id}. Mpesa code: ${mpesa_code}`);
       }
+    } else if (status === 'payment.failed' && api_ref?.user_id) {
+      // Record failed transaction
+      await supabase.from('transactions').insert({
+        user_id: api_ref.user_id,
+        type: 'deposit',
+        method: 'mpesa',
+        amount: Number(amount),
+        status: 'failed',
+        reference: checkout_id || null,
+      });
     }
 
     return new Response(JSON.stringify({ received: true }), {
