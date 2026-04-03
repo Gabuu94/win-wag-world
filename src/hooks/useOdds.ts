@@ -1,23 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { allMatches, type MatchData } from "@/data/matches";
 
-export interface OddsEvent {
-  id: string;
-  sport_key: string;
-  sport_title: string;
-  commence_time: string;
-  home_team: string;
-  away_team: string;
-  bookmakers: {
-    key: string;
-    title: string;
-    markets: {
-      key: string;
-      outcomes: { name: string; price: number }[];
-    }[];
-  }[];
-}
-
 export interface NormalizedMatch {
   matchId: string;
   league: string;
@@ -29,6 +12,12 @@ export interface NormalizedMatch {
   odds: { home: number; draw: number; away: number };
   totalMarkets: number;
   commenceTime: string;
+  gameState?: {
+    home_score?: number;
+    away_score?: number;
+    period?: string;
+    clock?: string;
+  } | null;
 }
 
 const FALLBACK_NOTICE = "Live odds are temporarily unavailable — showing demo markets.";
@@ -45,34 +34,48 @@ function getTimeUntil(commence: Date): string {
   return `${mins}m`;
 }
 
-function normalizeEvents(events: OddsEvent[]): NormalizedMatch[] {
-  const now = new Date();
+interface SharpEvent {
+  id: string;
+  sport: string;
+  league: string;
+  home_team: string;
+  away_team: string;
+  start_time: string;
+  is_live: boolean;
+  book_count: number;
+  markets: string[];
+  game_state?: { home_score?: number; away_score?: number; period?: string; clock?: string } | null;
+  odds: {
+    home: number | null;
+    away: number | null;
+    draw: number | null;
+  };
+}
+
+function normalizeSharpEvents(events: SharpEvent[]): NormalizedMatch[] {
   return events
-    .sort((a, b) => new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime())
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .map((ev) => {
-      const commence = new Date(ev.commence_time);
-      const isLive = commence <= now;
-      const bookmaker = ev.bookmakers?.[0];
-      const h2h = bookmaker?.markets?.find((m) => m.key === "h2h");
-      const outcomes = h2h?.outcomes || [];
-
-      const homeOdds = outcomes.find((o) => o.name === ev.home_team)?.price || 1.5;
-      const awayOdds = outcomes.find((o) => o.name === ev.away_team)?.price || 2.5;
-      const drawOdds = outcomes.find((o) => o.name === "Draw")?.price || 0;
-
+      const commence = new Date(ev.start_time);
+      const isLive = ev.is_live;
       const timeStr = isLive ? "LIVE" : getTimeUntil(commence);
 
       return {
         matchId: ev.id,
-        league: ev.sport_title,
-        sport: ev.sport_key,
+        league: ev.league?.toUpperCase() || ev.sport,
+        sport: ev.sport,
         team1: ev.home_team,
         team2: ev.away_team,
         time: timeStr,
         isLive,
-        odds: { home: homeOdds, draw: drawOdds, away: awayOdds },
-        totalMarkets: ev.bookmakers?.length || 1,
-        commenceTime: ev.commence_time,
+        odds: {
+          home: ev.odds?.home || 1.5,
+          draw: ev.odds?.draw || 0,
+          away: ev.odds?.away || 2.5,
+        },
+        totalMarkets: ev.markets?.length || ev.book_count || 1,
+        commenceTime: ev.start_time,
+        gameState: ev.game_state,
       };
     });
 }
@@ -142,10 +145,7 @@ export function useOdds(sportKey: string = "upcoming") {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      let apiSport = sportKey;
-      if (sportKey === "soccer") apiSport = "upcoming";
-
-      const response = await fetch(`${baseUrl}/functions/v1/fetch-odds?sport=${apiSport}`, {
+      const response = await fetch(`${baseUrl}/functions/v1/fetch-odds?sport=${sportKey}`, {
         headers: {
           Authorization: `Bearer ${anonKey}`,
           apikey: anonKey,
@@ -156,20 +156,22 @@ export function useOdds(sportKey: string = "upcoming") {
         throw new Error(`Failed to fetch odds: ${response.status}`);
       }
 
-      const quotaFallback = response.headers.get("x-odds-fallback") === "quota_exhausted";
-      const events: OddsEvent[] = await response.json();
+      const result = await response.json();
 
-      let filtered = events;
-      if (sportKey === "soccer") {
-        filtered = events.filter((e) => e.sport_key.startsWith("soccer"));
-      }
-
-      if (quotaFallback) {
+      // Handle fallback signal from edge function
+      if (result.fallback || result.error) {
         applyFallback();
         return;
       }
 
-      setMatches(normalizeEvents(filtered));
+      const events: SharpEvent[] = result.data || [];
+
+      if (events.length === 0) {
+        applyFallback();
+        return;
+      }
+
+      setMatches(normalizeSharpEvents(events));
       setLastUpdated(new Date());
     } catch {
       applyFallback();
