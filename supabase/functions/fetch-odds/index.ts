@@ -5,7 +5,6 @@ const corsHeaders = {
 
 const SHARPAPI_BASE = 'https://api.sharpapi.io/api/v1';
 
-// Map our sidebar sport keys to SharpAPI league/sport params
 function mapSportKey(key: string): { sport?: string; league?: string } {
   const map: Record<string, { sport?: string; league?: string }> = {
     upcoming: {},
@@ -33,16 +32,16 @@ function mapSportKey(key: string): { sport?: string; league?: string } {
   return map[key] || {};
 }
 
-function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
+function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extraHeaders },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -53,108 +52,76 @@ Deno.serve(async (req) => {
 
     const url = new URL(req.url);
     const sportKey = url.searchParams.get('sport') || 'upcoming';
+    const headers = { 'X-API-Key': API_KEY };
 
-    // If requesting the sports list
     if (sportKey === 'sports') {
-      const resp = await fetch(`${SHARPAPI_BASE}/sports`, {
-        headers: { 'X-API-Key': API_KEY },
-      });
+      const resp = await fetch(`${SHARPAPI_BASE}/sports`, { headers });
       const data = await resp.json();
       return jsonResponse(data);
     }
 
     const { sport, league } = mapSportKey(sportKey);
 
-    // Build query params for the events endpoint (grouped with odds)
+    // Fetch odds directly with moneyline market, grouped by event
+    // This gives us events + odds in one call
     const params = new URLSearchParams();
     if (sport) params.set('sport', sport);
     if (league) params.set('league', league);
-    params.set('limit', '100');
+    params.set('market', 'moneyline');
+    params.set('group_by', 'event');
+    params.set('limit', '200');
 
-    // Fetch events
-    const eventsResp = await fetch(`${SHARPAPI_BASE}/events?${params}`, {
-      headers: { 'X-API-Key': API_KEY },
-    });
+    const oddsResp = await fetch(`${SHARPAPI_BASE}/odds?${params}`, { headers });
 
-    if (!eventsResp.ok) {
-      const text = await eventsResp.text();
-      console.error(`SharpAPI events error [${eventsResp.status}]:`, text);
-      
-      if (eventsResp.status === 429) {
+    if (!oddsResp.ok) {
+      const text = await oddsResp.text();
+      console.error(`SharpAPI error [${oddsResp.status}]:`, text);
+
+      if (oddsResp.status === 429) {
         return jsonResponse({ error: 'Rate limited', fallback: true }, 429);
       }
-      throw new Error(`SharpAPI error [${eventsResp.status}]: ${text}`);
+      throw new Error(`SharpAPI error [${oddsResp.status}]: ${text}`);
     }
 
-    const eventsResult = await eventsResp.json();
-    const events = eventsResult.data || [];
+    const oddsResult = await oddsResp.json();
+    const grouped = oddsResult.data || [];
 
-    // Now fetch odds for these events (grouped by event for easy matching)
-    const oddsParams = new URLSearchParams();
-    if (sport) oddsParams.set('sport', sport);
-    if (league) oddsParams.set('league', league);
-    oddsParams.set('market', 'main');
-    oddsParams.set('group_by', 'event');
-    oddsParams.set('limit', '200');
+    // Transform grouped odds into our event format
+    const combined = grouped
+      .filter((g: any) => g.event_id && g.odds && g.odds.length > 0)
+      .map((g: any) => {
+        const odds = g.odds || [];
+        const homeOdds = odds.find((o: any) => o.selection_type === 'home');
+        const awayOdds = odds.find((o: any) => o.selection_type === 'away');
+        const drawOdds = odds.find((o: any) => o.selection === 'Draw' || o.selection_type === 'draw');
 
-    const oddsResp = await fetch(`${SHARPAPI_BASE}/odds?${oddsParams}`, {
-      headers: { 'X-API-Key': API_KEY },
-    });
+        // Parse teams from event_name or from odds selections
+        const homeName = homeOdds?.home_team || odds[0]?.home_team || g.event_name?.split(' vs ')?.[0] || 'Home';
+        const awayName = awayOdds?.away_team || odds[0]?.away_team || g.event_name?.split(' vs ')?.[1] || 'Away';
 
-    let oddsGrouped: Record<string, any[]> = {};
+        return {
+          id: g.event_id,
+          sport: g.sport || odds[0]?.sport || '',
+          league: g.league || odds[0]?.league || '',
+          home_team: homeName,
+          away_team: awayName,
+          start_time: g.start_time || odds[0]?.event_start_time || '',
+          is_live: g.is_live ?? odds[0]?.is_live ?? false,
+          book_count: new Set(odds.map((o: any) => o.sportsbook)).size,
+          markets: [],
+          game_state: null,
+          odds: {
+            home: homeOdds?.odds_decimal || null,
+            away: awayOdds?.odds_decimal || null,
+            draw: drawOdds?.odds_decimal || null,
+          },
+        };
+      });
 
-    if (oddsResp.ok) {
-      const oddsResult = await oddsResp.json();
-      const oddsData = oddsResult.data || [];
-      
-      // Build a map from event_id to odds array
-      for (const group of oddsData) {
-        if (group.event_id && group.odds) {
-          oddsGrouped[group.event_id] = group.odds;
-        }
-      }
-    }
-
-    // Combine events + odds into a unified response
-    const combined = events.map((ev: any) => {
-      const eventOdds = oddsGrouped[ev.id] || [];
-      
-      // Extract moneyline odds (prefer first sportsbook available)
-      const moneylineOdds = eventOdds.filter((o: any) => o.market_type === 'moneyline');
-      const homeOdds = moneylineOdds.find((o: any) => o.selection_type === 'home');
-      const awayOdds = moneylineOdds.find((o: any) => o.selection_type === 'away');
-      
-      // For draw (soccer, etc.)
-      const drawOdds = moneylineOdds.find((o: any) => 
-        o.selection === 'Draw' || o.selection_type === 'draw'
-      );
-
-      return {
-        id: ev.id,
-        sport: ev.sport,
-        league: ev.league,
-        home_team: ev.home_team,
-        away_team: ev.away_team,
-        start_time: ev.start_time,
-        is_live: ev.is_live || ev.status === 'live',
-        book_count: ev.book_count || 1,
-        markets: ev.markets || [],
-        game_state: ev.game_state || null,
-        odds: {
-          home: homeOdds?.odds_decimal || null,
-          away: awayOdds?.odds_decimal || null,
-          draw: drawOdds?.odds_decimal || null,
-          home_american: homeOdds?.odds_american || null,
-          away_american: awayOdds?.odds_american || null,
-          draw_american: drawOdds?.odds_american || null,
-        },
-      };
-    });
-
-    return jsonResponse({ 
-      success: true, 
+    return jsonResponse({
+      success: true,
       data: combined,
-      meta: eventsResult.meta || {},
+      meta: oddsResult.meta || {},
     });
   } catch (error) {
     console.error('Error fetching odds:', error);
