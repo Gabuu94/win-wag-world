@@ -45,6 +45,15 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
         navigate("/history");
         onClose();
         break;
+      case "settings":
+        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
+        navigate("/settings");
+        onClose();
+        break;
+      case "chat":
+        // Chat is always available via the floating widget
+        onClose();
+        break;
       case "logout":
         logout();
         onClose();
