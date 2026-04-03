@@ -1,19 +1,41 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Expose-Headers': 'x-odds-fallback',
 };
 
-// Sports that only support outrights, not h2h
-const OUTRIGHT_SPORTS = ['golf_', 'politics_', '_winner', '_championship'];
+const SHARPAPI_BASE = 'https://api.sharpapi.io/api/v1';
 
-function isOutrightSport(sport: string): boolean {
-  return OUTRIGHT_SPORTS.some((s) => sport.includes(s));
+function mapSportKey(key: string): { sport?: string; league?: string } {
+  const map: Record<string, { sport?: string; league?: string }> = {
+    upcoming: {},
+    soccer: { sport: 'soccer' },
+    soccer_epl: { league: 'epl' },
+    soccer_spain_la_liga: { league: 'la_liga' },
+    soccer_italy_serie_a: { league: 'serie_a' },
+    soccer_germany_bundesliga: { league: 'bundesliga' },
+    soccer_france_ligue_one: { league: 'ligue_1' },
+    soccer_uefa_champs_league: { league: 'ucl' },
+    basketball_nba: { league: 'nba' },
+    basketball_euroleague: { league: 'euroleague' },
+    icehockey_nhl: { league: 'nhl' },
+    americanfootball_nfl: { league: 'nfl' },
+    baseball_mlb: { league: 'mlb' },
+    mma_mixed_martial_arts: { sport: 'mma' },
+    tennis_atp_french_open: { sport: 'tennis' },
+    tennis_wta_french_open: { sport: 'tennis' },
+    rugbyleague_nrl: { league: 'nrl' },
+    aussierules_afl: { league: 'afl' },
+    cricket_test_match: { sport: 'cricket' },
+    boxing_boxing: { sport: 'boxing' },
+    golf_masters_tournament_winner: { sport: 'golf' },
+  };
+  return map[key] || {};
 }
 
-function jsonResponse(data: unknown, extraHeaders: Record<string, string> = {}) {
+function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extraHeaders },
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
@@ -23,55 +45,89 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const API_KEY = Deno.env.get('THE_ODDS_API_KEY');
+    const API_KEY = Deno.env.get('SHARPAPI_KEY');
     if (!API_KEY) {
-      throw new Error('THE_ODDS_API_KEY is not configured');
+      throw new Error('SHARPAPI_KEY is not configured');
     }
 
     const url = new URL(req.url);
-    const sport = url.searchParams.get('sport') || 'upcoming';
-    const regions = url.searchParams.get('regions') || 'us,eu,uk';
-    const requestedMarkets = url.searchParams.get('markets') || 'h2h';
+    const sportKey = url.searchParams.get('sport') || 'upcoming';
+    const headers = { 'X-API-Key': API_KEY };
 
-    let apiUrl: string;
-
-    if (sport === 'sports') {
-      apiUrl = `https://api.the-odds-api.com/v4/sports/?apiKey=${API_KEY}`;
-    } else {
-      const markets = isOutrightSport(sport) ? 'outrights' : requestedMarkets;
-      apiUrl = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${regions}&markets=${markets}&oddsFormat=decimal`;
+    if (sportKey === 'sports') {
+      const resp = await fetch(`${SHARPAPI_BASE}/sports`, { headers });
+      const data = await resp.json();
+      return jsonResponse(data);
     }
 
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      const text = await response.text();
+    const { sport, league } = mapSportKey(sportKey);
 
-      if (response.status === 401 && text.includes('OUT_OF_USAGE_CREDITS')) {
-        return jsonResponse([], { 'x-odds-fallback': 'quota_exhausted' });
+    // Fetch odds directly with moneyline market, grouped by event
+    // This gives us events + odds in one call
+    const params = new URLSearchParams();
+    if (sport) params.set('sport', sport);
+    if (league) params.set('league', league);
+    params.set('market', 'moneyline');
+    params.set('group_by', 'event');
+    params.set('limit', '200');
+
+    const oddsResp = await fetch(`${SHARPAPI_BASE}/odds?${params}`, { headers });
+
+    if (!oddsResp.ok) {
+      const text = await oddsResp.text();
+      console.error(`SharpAPI error [${oddsResp.status}]:`, text);
+
+      if (oddsResp.status === 429) {
+        return jsonResponse({ error: 'Rate limited', fallback: true }, 429);
       }
-
-      if (response.status === 422 && text.includes('INVALID_MARKET_COMBO')) {
-        const fallbackUrl = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${regions}&markets=outrights&oddsFormat=decimal`;
-        const fallbackResp = await fetch(fallbackUrl);
-
-        if (fallbackResp.ok) {
-          const data = await fallbackResp.json();
-          return jsonResponse(data);
-        }
-
-        return jsonResponse([]);
-      }
-
-      throw new Error(`Odds API error [${response.status}]: ${text}`);
+      throw new Error(`SharpAPI error [${oddsResp.status}]: ${text}`);
     }
 
-    const data = await response.json();
-    return jsonResponse(data);
+    const oddsResult = await oddsResp.json();
+    const grouped = oddsResult.data || [];
+
+    // Transform grouped odds into our event format
+    const combined = grouped
+      .filter((g: any) => g.event_id && g.odds && g.odds.length > 0)
+      .map((g: any) => {
+        const odds = g.odds || [];
+        const homeOdds = odds.find((o: any) => o.selection_type === 'home');
+        const awayOdds = odds.find((o: any) => o.selection_type === 'away');
+        const drawOdds = odds.find((o: any) => o.selection === 'Draw' || o.selection_type === 'draw');
+
+        // Parse teams from event_name or from odds selections
+        const homeName = homeOdds?.home_team || odds[0]?.home_team || g.event_name?.split(' vs ')?.[0] || 'Home';
+        const awayName = awayOdds?.away_team || odds[0]?.away_team || g.event_name?.split(' vs ')?.[1] || 'Away';
+
+        return {
+          id: g.event_id,
+          sport: g.sport || odds[0]?.sport || '',
+          league: g.league || odds[0]?.league || '',
+          home_team: homeName,
+          away_team: awayName,
+          start_time: g.start_time || odds[0]?.event_start_time || '',
+          is_live: g.is_live ?? odds[0]?.is_live ?? false,
+          book_count: new Set(odds.map((o: any) => o.sportsbook)).size,
+          markets: [],
+          game_state: null,
+          odds: {
+            home: homeOdds?.odds_decimal || null,
+            away: awayOdds?.odds_decimal || null,
+            draw: drawOdds?.odds_decimal || null,
+          },
+        };
+      });
+
+    return jsonResponse({
+      success: true,
+      data: combined,
+      meta: oddsResult.meta || {},
+    });
   } catch (error) {
     console.error('Error fetching odds:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : 'Unknown error', fallback: true },
+      500
     );
   }
 });
