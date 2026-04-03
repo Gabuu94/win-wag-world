@@ -45,6 +45,15 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
         navigate("/history");
         onClose();
         break;
+      case "settings":
+        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
+        navigate("/settings");
+        onClose();
+        break;
+      case "chat":
+        // Chat is always available via the floating widget
+        onClose();
+        break;
       case "logout":
         logout();
         onClose();
@@ -60,9 +69,9 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
     { label: "Bring a Friend", icon: Users, action: "refer", active: false },
     { label: "Transaction History", icon: Receipt, action: "transactions", active: true },
     { label: "Voucher", icon: Ticket, action: "voucher", active: false },
-    { label: "Chat", icon: MessageCircle, action: "chat", active: false },
+    { label: "Chat", icon: MessageCircle, action: "chat", active: true },
     { label: "My Bets", icon: ClipboardList, action: "my-bets", active: true },
-    { label: "Settings", icon: Settings, action: "settings", active: false },
+    { label: "Settings", icon: Settings, action: "settings", active: true },
     { label: "Activate VIP", icon: Crown, action: "vip", active: false },
     { label: "Verification", icon: ShieldCheck, action: "verify", active: false },
     { label: "Exit", icon: LogOut, action: "logout", active: true, destructive: true },

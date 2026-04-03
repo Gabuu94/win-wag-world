@@ -1,19 +1,73 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Radio } from "lucide-react";
+import { ArrowLeft, Clock, Radio, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useOdds } from "@/hooks/useOdds";
 import OddsButton from "@/components/OddsButton";
 import TopBar from "@/components/TopBar";
 import BettingSlip from "@/components/BettingSlip";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+
+interface MarketOdd {
+  id: string;
+  sportsbook: string;
+  selection: string;
+  selection_type: string;
+  odds_decimal: number;
+  odds_american: number;
+  line: number | null;
+  player_name?: string;
+}
+
+const MARKET_LABELS: Record<string, string> = {
+  moneyline: "Match Result",
+  point_spread: "Spread / Handicap",
+  total_points: "Total Points",
+  total_goals: "Total Goals",
+  team_total: "Team Total",
+  "1st_half_moneyline": "1st Half Result",
+  "1st_half_point_spread": "1st Half Spread",
+  "1st_half_total_points": "1st Half Total",
+};
 
 const MatchDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  // Try multiple sport keys to find the match
   const { matches: allMatches, loading } = useOdds("upcoming");
+  const [markets, setMarkets] = useState<Record<string, MarketOdd[]>>({});
+  const [marketsLoading, setMarketsLoading] = useState(false);
+  const [expandedMarkets, setExpandedMarkets] = useState<Set<string>>(new Set(["moneyline"]));
 
   const match = allMatches.find((m) => m.matchId === id);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchMarkets = async () => {
+      setMarketsLoading(true);
+      try {
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const resp = await fetch(`${baseUrl}/functions/v1/fetch-match-markets?event_id=${id}`, {
+          headers: { Authorization: `Bearer ${anonKey}`, apikey: anonKey },
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.markets) setMarkets(data.markets);
+        }
+      } catch {
+        // silently fail, main odds are still shown
+      } finally {
+        setMarketsLoading(false);
+      }
+    };
+    fetchMarkets();
+  }, [id]);
+
+  const toggleMarket = (key: string) => {
+    setExpandedMarkets((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -35,9 +89,7 @@ const MatchDetail = () => {
           <div className="text-center">
             <h2 className="font-display text-2xl font-bold mb-2">Match Not Found</h2>
             <p className="text-muted-foreground text-sm mb-4">This match may have ended or is no longer available.</p>
-            <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm">
-              ← Back to matches
-            </button>
+            <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm">← Back to matches</button>
           </div>
         </div>
       </div>
@@ -48,15 +100,15 @@ const MatchDetail = () => {
   const hasDrawOdds = match.odds.draw > 0;
   const commenceDate = new Date(match.commenceTime);
 
+  // Merge main moneyline odds from the match with additional markets
+  const marketKeys = Object.keys(markets).filter((k) => k !== "moneyline");
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 overflow-y-auto p-4 h-[calc(100vh-8rem)]">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition mb-4"
-          >
+          <button onClick={() => navigate("/")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to matches
           </button>
 
@@ -77,14 +129,7 @@ const MatchDetail = () => {
             </div>
 
             <div className="text-xs text-muted-foreground mt-1">
-              {commenceDate.toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {commenceDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </div>
 
             <div className="flex items-center justify-between mt-6">
@@ -99,6 +144,7 @@ const MatchDetail = () => {
               </div>
             </div>
 
+            {/* Main moneyline odds */}
             <div className="mt-6">
               <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Match Result</h3>
               <div className="flex gap-3 justify-center">
@@ -109,13 +155,80 @@ const MatchDetail = () => {
                 <OddsButton label={`2 – ${match.team2}`} odds={match.odds.away} selectionId={`${match.matchId}-away`} matchLabel={matchLabel} pick={`${match.team2} Win`} />
               </div>
             </div>
+          </div>
 
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">
+          {/* Additional Markets */}
+          {marketsLoading && (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 animate-spin text-primary mr-2" />
+              <span className="text-sm text-muted-foreground">Loading more markets...</span>
+            </div>
+          )}
+
+          {marketKeys.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-2">More Markets</h3>
+              {marketKeys.map((mkey) => {
+                const odds = markets[mkey];
+                const isExpanded = expandedMarkets.has(mkey);
+                const label = MARKET_LABELS[mkey] || mkey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+                // Group by line for spread/total markets
+                const groups: Record<string, MarketOdd[]> = {};
+                for (const o of odds) {
+                  const lineKey = o.line != null ? String(o.line) : "main";
+                  if (!groups[lineKey]) groups[lineKey] = [];
+                  groups[lineKey].push(o);
+                }
+
+                return (
+                  <div key={mkey} className="bg-card border border-border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleMarket(mkey)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-secondary/50 transition"
+                    >
+                      <span>{label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{odds.length} options</span>
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </div>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-4 pb-4">
+                        {Object.entries(groups).map(([lineKey, lineOdds]) => (
+                          <div key={lineKey} className="mb-2 last:mb-0">
+                            {lineKey !== "main" && (
+                              <p className="text-xs text-muted-foreground mb-1">Line: {lineKey}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {lineOdds.map((o) => (
+                                <OddsButton
+                                  key={o.id}
+                                  label={o.player_name || o.selection}
+                                  odds={o.odds_decimal}
+                                  selectionId={`${match.matchId}-${mkey}-${o.selection}`}
+                                  matchLabel={matchLabel}
+                                  pick={`${o.selection}${o.line != null ? ` (${o.line > 0 ? "+" : ""}${o.line})` : ""}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!marketsLoading && marketKeys.length === 0 && (
+            <div className="mt-4 text-center">
+              <p className="text-xs text-muted-foreground">
                 Odds from {match.totalMarkets} bookmaker{match.totalMarkets !== 1 ? "s" : ""} · Updates every 30s
               </p>
             </div>
-          </div>
+          )}
         </main>
         <BettingSlip />
       </div>
