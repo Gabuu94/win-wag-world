@@ -86,6 +86,7 @@ export type Database = {
           created_at: string
           id: string
           referral_code: string | null
+          total_wagered: number
           updated_at: string
           user_id: string
           username: string
@@ -95,6 +96,7 @@ export type Database = {
           created_at?: string
           id?: string
           referral_code?: string | null
+          total_wagered?: number
           updated_at?: string
           user_id: string
           username: string
@@ -104,6 +106,7 @@ export type Database = {
           created_at?: string
           id?: string
           referral_code?: string | null
+          total_wagered?: number
           updated_at?: string
           user_id?: string
           username?: string
@@ -179,12 +182,157 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_documents: {
+        Row: {
+          doc_type: string
+          file_url: string | null
+          id: string
+          reviewed_at: string | null
+          status: string
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          doc_type: string
+          file_url?: string | null
+          id?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          doc_type?: string
+          file_url?: string | null
+          id?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vip_tiers: {
+        Row: {
+          bonus_multiplier: number
+          cashback_rate: number
+          color: string
+          icon: string
+          id: number
+          min_wagered: number
+          name: string
+        }
+        Insert: {
+          bonus_multiplier?: number
+          cashback_rate?: number
+          color?: string
+          icon?: string
+          id?: number
+          min_wagered?: number
+          name: string
+        }
+        Update: {
+          bonus_multiplier?: number
+          cashback_rate?: number
+          color?: string
+          icon?: string
+          id?: number
+          min_wagered?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      voucher_redemptions: {
+        Row: {
+          amount: number
+          id: string
+          redeemed_at: string
+          user_id: string
+          voucher_id: string
+        }
+        Insert: {
+          amount: number
+          id?: string
+          redeemed_at?: string
+          user_id: string
+          voucher_id: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          redeemed_at?: string
+          user_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          active: boolean
+          amount: number
+          code: string
+          created_at: string
+          current_uses: number
+          expires_at: string | null
+          id: string
+          max_uses: number
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          code: string
+          created_at?: string
+          current_uses?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          code?: string
+          created_at?: string
+          current_uses?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_vip_tier: {
+        Args: { p_user_id: string }
+        Returns: {
+          bonus_multiplier: number
+          cashback_rate: number
+          next_tier_min: number
+          next_tier_name: string
+          tier_color: string
+          tier_icon: string
+          tier_name: string
+          total_wagered: number
+        }[]
+      }
+      redeem_voucher: {
+        Args: { p_code: string; p_user_id: string }
+        Returns: {
+          amount: number
+          message: string
+          success: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
