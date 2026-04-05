@@ -1,8 +1,9 @@
-import { Search, Bell, Wallet, User, Menu, X } from "lucide-react";
+import { Search, Wallet, User, Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserMenuDrawer from "./UserMenuDrawer";
+import NotificationBell from "./NotificationBell";
 
 const SPORT_TABS = [
   { key: "upcoming", label: "🔥 All" },
@@ -20,13 +21,20 @@ const SPORT_TABS = [
 interface TopBarProps {
   activeSport?: string;
   onSportChange?: (sport: string) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
+const TopBar = ({ activeSport = "upcoming", onSportChange, searchQuery = "", onSearchChange }: TopBarProps) => {
   const { profile, isLoggedIn, setShowAuthModal, setShowDepositModal } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [localSearch, setLocalSearch] = useState(searchQuery);
   const navigate = useNavigate();
+
+  const handleSearchChange = (val: string) => {
+    setLocalSearch(val);
+    onSearchChange?.(val);
+  };
 
   return (
     <>
@@ -49,13 +57,13 @@ const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
             <Search className="w-4 h-4 text-muted-foreground mr-2" />
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={localSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search events, teams, leagues..."
               className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full"
             />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground">
+            {localSearch && (
+              <button onClick={() => handleSearchChange("")} className="text-muted-foreground hover:text-foreground">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -79,9 +87,7 @@ const TopBar = ({ activeSport = "upcoming", onSportChange }: TopBarProps) => {
               Deposit
             </button>
 
-            <button className="hidden sm:flex items-center gap-1 text-muted-foreground hover:text-foreground transition">
-              <Bell className="w-5 h-5" />
-            </button>
+            <NotificationBell />
 
             <button
               onClick={() => {
