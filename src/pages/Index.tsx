@@ -6,13 +6,14 @@ import BettingSlip from "@/components/BettingSlip";
 
 const Index = () => {
   const [activeSport, setActiveSport] = useState("upcoming");
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <TopBar activeSport={activeSport} onSportChange={setActiveSport} />
+      <TopBar activeSport={activeSport} onSportChange={setActiveSport} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       <div className="flex flex-1 overflow-hidden">
         <SportsSidebar activeSport={activeSport} onSportChange={setActiveSport} />
-        <LiveMatchesFeed sportKey={activeSport} />
+        <LiveMatchesFeed sportKey={activeSport} searchQuery={searchQuery} />
         <BettingSlip />
       </div>
     </div>
