@@ -14,6 +14,7 @@ import BetHistory from "./pages/BetHistory";
 import TransactionHistory from "./pages/TransactionHistory";
 import Withdraw from "./pages/Withdraw";
 import Settings from "./pages/Settings";
+import Referral from "./pages/Referral";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/transactions" element={<TransactionHistory />} />
               <Route path="/withdraw" element={<Withdraw />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/referral" element={<Referral />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>

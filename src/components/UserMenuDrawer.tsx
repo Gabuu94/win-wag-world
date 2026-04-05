@@ -51,7 +51,11 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
         onClose();
         break;
       case "chat":
-        // Chat is always available via the floating widget
+        onClose();
+        break;
+      case "refer":
+        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
+        navigate("/referral");
         onClose();
         break;
       case "logout":
@@ -66,7 +70,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
   const accountItems = [
     { label: "Deposit", icon: Wallet, action: "deposit", active: true, highlight: true },
     { label: "Withdrawals", icon: ArrowDownToLine, action: "withdraw", active: true },
-    { label: "Bring a Friend", icon: Users, action: "refer", active: false },
+    { label: "Bring a Friend", icon: Users, action: "refer", active: true },
     { label: "Transaction History", icon: Receipt, action: "transactions", active: true },
     { label: "Voucher", icon: Ticket, action: "voucher", active: false },
     { label: "Chat", icon: MessageCircle, action: "chat", active: true },

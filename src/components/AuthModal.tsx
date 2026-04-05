@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { X, Mail, Lock, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Mail, Lock, User, Gift } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 const AuthModal = () => {
   const { showAuthModal, setShowAuthModal, login, signup } = useAuth();
@@ -9,7 +10,14 @@ const AuthModal = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const refCode = searchParams.get("ref");
+    if (refCode) setReferralCode(refCode);
+  }, [searchParams]);
 
   if (!showAuthModal) return null;
 
@@ -32,7 +40,7 @@ const AuthModal = () => {
           setSubmitting(false);
           return;
         }
-        const result = await signup(username, email, password);
+        const result = await signup(username, email, password, referralCode || undefined);
         if (result.error) {
           toast.error(result.error);
         } else {
@@ -50,6 +58,7 @@ const AuthModal = () => {
     setUsername("");
     setEmail("");
     setPassword("");
+    setReferralCode("");
   };
 
   return (
@@ -107,6 +116,18 @@ const AuthModal = () => {
             />
           </div>
 
+          {!isLogin && (
+            <div className="relative">
+              <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Referral code (optional)"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
+              />
+            </div>
+          )}
           <button
             type="submit"
             disabled={submitting}

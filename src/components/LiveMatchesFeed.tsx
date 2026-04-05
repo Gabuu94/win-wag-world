@@ -5,10 +5,18 @@ import { Loader2, RefreshCw } from "lucide-react";
 
 interface LiveMatchesFeedProps {
   sportKey?: string;
+  searchQuery?: string;
 }
 
-const LiveMatchesFeed = ({ sportKey = "upcoming" }: LiveMatchesFeedProps) => {
-  const { matches, loading, error, notice, lastUpdated, refetch } = useOdds(sportKey);
+const LiveMatchesFeed = ({ sportKey = "upcoming", searchQuery = "" }: LiveMatchesFeedProps) => {
+  const { matches: rawMatches, loading, error, notice, lastUpdated, refetch } = useOdds(sportKey);
+
+  const matches = searchQuery.trim()
+    ? rawMatches.filter((m) => {
+        const q = searchQuery.toLowerCase();
+        return m.team1.toLowerCase().includes(q) || m.team2.toLowerCase().includes(q) || m.league.toLowerCase().includes(q);
+      })
+    : rawMatches;
 
   const liveMatches = matches.filter((m) => m.isLive);
   const upcomingMatches = matches.filter((m) => !m.isLive);

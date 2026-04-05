@@ -13,7 +13,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  signup: (username: string, email: string, password: string) => Promise<{ error?: string }>;
+  signup: (username: string, email: string, password: string, referralCode?: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   deposit: (amount: number) => Promise<boolean>;
   withdraw: (amount: number) => Promise<boolean>;
@@ -107,11 +107,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return {};
   }, []);
 
-  const signup = useCallback(async (username: string, email: string, password: string) => {
+  const signup = useCallback(async (username: string, email: string, password: string, referralCode?: string) => {
+    const metadata: Record<string, string> = { username };
+    if (referralCode) metadata.referral_code = referralCode;
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username } },
+      options: { data: metadata },
     });
     if (error) return { error: error.message };
     return {};
