@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { sendBrowserNotification, requestPushPermission } from "@/lib/pushNotifications";
 import type { User, Session } from "@supabase/supabase-js";
 
 export interface ProfileData {
@@ -55,11 +56,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
 
-  // Realtime profile balance updates
+  // Realtime profile balance updates + push notifications
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
+    // Request push permission on login
+    requestPushPermission();
+
+    const profileChannel = supabase
       .channel("profile-balance-realtime")
       .on("postgres_changes", {
         event: "UPDATE",
@@ -74,7 +78,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Listen for new notifications and send browser push
+    const notifChannel = supabase
+      .channel("notifications-push")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        const n = payload.new as any;
+        if (n) {
+          sendBrowserNotification(n.title, n.message);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+      supabase.removeChannel(notifChannel);
+    };
   }, [user]);
 
   useEffect(() => {
