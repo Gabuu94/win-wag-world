@@ -15,6 +15,9 @@ import TransactionHistory from "./pages/TransactionHistory";
 import Withdraw from "./pages/Withdraw";
 import Settings from "./pages/Settings";
 import Referral from "./pages/Referral";
+import VIP from "./pages/VIP";
+import Voucher from "./pages/Voucher";
+import Verification from "./pages/Verification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +41,9 @@ const App = () => (
               <Route path="/withdraw" element={<Withdraw />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/referral" element={<Referral />} />
+              <Route path="/vip" element={<VIP />} />
+              <Route path="/voucher" element={<Voucher />} />
+              <Route path="/verification" element={<Verification />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
