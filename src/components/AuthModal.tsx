@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { X, Mail, Lock, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Mail, Lock, User, Gift } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 const AuthModal = () => {
   const { showAuthModal, setShowAuthModal, login, signup } = useAuth();
@@ -9,7 +10,14 @@ const AuthModal = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const refCode = searchParams.get("ref");
+    if (refCode) setReferralCode(refCode);
+  }, [searchParams]);
 
   if (!showAuthModal) return null;
 
