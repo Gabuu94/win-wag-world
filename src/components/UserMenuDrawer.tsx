@@ -24,46 +24,20 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
   };
 
   const handleAction = (action: string) => {
+    if (!isLoggedIn && action !== "logout") { setShowAuthModal(true); onClose(); return; }
     switch (action) {
-      case "deposit":
-        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
-        setShowDepositModal(true);
-        onClose();
-        break;
-      case "withdraw":
-        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
-        navigate("/withdraw");
-        onClose();
-        break;
-      case "transactions":
-        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
-        navigate("/transactions");
-        onClose();
-        break;
-      case "my-bets":
-        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
-        navigate("/history");
-        onClose();
-        break;
-      case "settings":
-        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
-        navigate("/settings");
-        onClose();
-        break;
-      case "chat":
-        onClose();
-        break;
-      case "refer":
-        if (!isLoggedIn) { setShowAuthModal(true); onClose(); return; }
-        navigate("/referral");
-        onClose();
-        break;
-      case "logout":
-        logout();
-        onClose();
-        break;
-      default:
-        break;
+      case "deposit": setShowDepositModal(true); onClose(); break;
+      case "withdraw": navigate("/withdraw"); onClose(); break;
+      case "transactions": navigate("/transactions"); onClose(); break;
+      case "my-bets": navigate("/history"); onClose(); break;
+      case "settings": navigate("/settings"); onClose(); break;
+      case "refer": navigate("/referral"); onClose(); break;
+      case "vip": navigate("/vip"); onClose(); break;
+      case "voucher": navigate("/voucher"); onClose(); break;
+      case "verify": navigate("/verification"); onClose(); break;
+      case "chat": onClose(); break;
+      case "logout": logout(); onClose(); break;
+      default: break;
     }
   };
 
@@ -72,12 +46,12 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
     { label: "Withdrawals", icon: ArrowDownToLine, action: "withdraw", active: true },
     { label: "Bring a Friend", icon: Users, action: "refer", active: true },
     { label: "Transaction History", icon: Receipt, action: "transactions", active: true },
-    { label: "Voucher", icon: Ticket, action: "voucher", active: false },
+    { label: "Voucher", icon: Ticket, action: "voucher", active: true },
     { label: "Chat", icon: MessageCircle, action: "chat", active: true },
     { label: "My Bets", icon: ClipboardList, action: "my-bets", active: true },
     { label: "Settings", icon: Settings, action: "settings", active: true },
-    { label: "Activate VIP", icon: Crown, action: "vip", active: false },
-    { label: "Verification", icon: ShieldCheck, action: "verify", active: false },
+    { label: "VIP Program", icon: Crown, action: "vip", active: true },
+    { label: "Verification", icon: ShieldCheck, action: "verify", active: true },
     { label: "Exit", icon: LogOut, action: "logout", active: true, destructive: true },
   ];
 
