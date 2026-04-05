@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Lock, Bell, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Lock, Bell, Save, Loader2, Smartphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import TopBar from "@/components/TopBar";
 import { toast } from "sonner";
+import { requestPushPermission, isPushSupported } from "@/lib/pushNotifications";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -184,6 +185,20 @@ const Settings = () => {
                 </button>
               </div>
             ))}
+            {isPushSupported() && (
+              <div className="pt-2 border-t border-border">
+                <button
+                  onClick={async () => {
+                    const granted = await requestPushPermission();
+                    toast(granted ? "Browser notifications enabled!" : "Permission denied. Enable in browser settings.");
+                  }}
+                  className="flex items-center gap-2 bg-secondary text-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-secondary/80 transition"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  Enable Browser Push Notifications
+                </button>
+              </div>
+            )}
             <button
               onClick={() => toast.success("Notification preferences saved!")}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:brightness-110 transition"
