@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_game_markets: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          is_active: boolean
+          market_name: string
+          market_type: string
+          result: string | null
+          selections: Json
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          is_active?: boolean
+          market_name: string
+          market_type: string
+          result?: string | null
+          selections?: Json
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          is_active?: boolean
+          market_name?: string
+          market_type?: string
+          result?: string | null
+          selections?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_game_markets_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "admin_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_games: {
+        Row: {
+          away_team: string
+          created_at: string
+          current_minute: number | null
+          current_period: string | null
+          end_time: string | null
+          extra_time_result_away: number | null
+          extra_time_result_home: number | null
+          half_time_away: number | null
+          half_time_home: number | null
+          has_extra_time: boolean | null
+          has_penalties: boolean | null
+          home_team: string
+          id: string
+          is_published: boolean
+          league: string | null
+          penalty_away: number | null
+          penalty_home: number | null
+          quarters_scores: Json | null
+          result_away: number | null
+          result_home: number | null
+          sport: string
+          start_time: string
+          status: string
+          total_cards_away: number | null
+          total_cards_home: number | null
+          total_corners_away: number | null
+          total_corners_home: number | null
+          updated_at: string
+        }
+        Insert: {
+          away_team: string
+          created_at?: string
+          current_minute?: number | null
+          current_period?: string | null
+          end_time?: string | null
+          extra_time_result_away?: number | null
+          extra_time_result_home?: number | null
+          half_time_away?: number | null
+          half_time_home?: number | null
+          has_extra_time?: boolean | null
+          has_penalties?: boolean | null
+          home_team: string
+          id?: string
+          is_published?: boolean
+          league?: string | null
+          penalty_away?: number | null
+          penalty_home?: number | null
+          quarters_scores?: Json | null
+          result_away?: number | null
+          result_home?: number | null
+          sport?: string
+          start_time: string
+          status?: string
+          total_cards_away?: number | null
+          total_cards_home?: number | null
+          total_corners_away?: number | null
+          total_corners_home?: number | null
+          updated_at?: string
+        }
+        Update: {
+          away_team?: string
+          created_at?: string
+          current_minute?: number | null
+          current_period?: string | null
+          end_time?: string | null
+          extra_time_result_away?: number | null
+          extra_time_result_home?: number | null
+          half_time_away?: number | null
+          half_time_home?: number | null
+          has_extra_time?: boolean | null
+          has_penalties?: boolean | null
+          home_team?: string
+          id?: string
+          is_published?: boolean
+          league?: string | null
+          penalty_away?: number | null
+          penalty_home?: number | null
+          quarters_scores?: Json | null
+          result_away?: number | null
+          result_home?: number | null
+          sport?: string
+          start_time?: string
+          status?: string
+          total_cards_away?: number | null
+          total_cards_home?: number | null
+          total_corners_away?: number | null
+          total_corners_home?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bets: {
         Row: {
           id: string
@@ -113,6 +247,48 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          active: boolean
+          bonus_type: string
+          bonus_value: number
+          created_at: string
+          description: string
+          end_date: string | null
+          id: string
+          image_url: string | null
+          min_deposit: number | null
+          start_date: string
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          bonus_type?: string
+          bonus_value?: number
+          created_at?: string
+          description: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          min_deposit?: number | null
+          start_date?: string
+          title: string
+        }
+        Update: {
+          active?: boolean
+          bonus_type?: string
+          bonus_value?: number
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          min_deposit?: number | null
+          start_date?: string
+          title?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_amount: number
@@ -140,6 +316,33 @@ export type Database = {
           referred_id?: string
           referrer_id?: string
           status?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          sender_role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          sender_role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          sender_role?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -178,6 +381,27 @@ export type Database = {
           status?: string
           type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -325,6 +549,13 @@ export type Database = {
           total_wagered: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       redeem_voucher: {
         Args: { p_code: string; p_user_id: string }
         Returns: {
@@ -335,7 +566,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -462,6 +693,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
