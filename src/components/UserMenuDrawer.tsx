@@ -33,6 +33,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
       case "settings": navigate("/settings"); onClose(); break;
       case "refer": navigate("/referral"); onClose(); break;
       case "vip": navigate("/vip"); onClose(); break;
+      case "promotions": navigate("/promotions"); onClose(); break;
       case "voucher": navigate("/voucher"); onClose(); break;
       case "verify": navigate("/verification"); onClose(); break;
       case "chat": onClose(); break;
@@ -44,6 +45,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
   const accountItems = [
     { label: "Deposit", icon: Wallet, action: "deposit", active: true, highlight: true },
     { label: "Withdrawals", icon: ArrowDownToLine, action: "withdraw", active: true },
+    { label: "Promotions", icon: Ticket, action: "promotions", active: true },
     { label: "Bring a Friend", icon: Users, action: "refer", active: true },
     { label: "Transaction History", icon: Receipt, action: "transactions", active: true },
     { label: "Voucher", icon: Ticket, action: "voucher", active: true },
