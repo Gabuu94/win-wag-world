@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { allMatches, type MatchData } from "@/data/matches";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface NormalizedMatch {
   matchId: string;
@@ -145,6 +146,9 @@ export function useOdds(sportKey: string = "upcoming") {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+      // Fetch admin games in parallel
+      const adminGamesPromise = supabase.from("admin_games").select("*").eq("is_published", true);
+
       const response = await fetch(`${baseUrl}/functions/v1/fetch-odds?sport=${sportKey}`, {
         headers: {
           Authorization: `Bearer ${anonKey}`,
@@ -152,26 +156,81 @@ export function useOdds(sportKey: string = "upcoming") {
         },
       });
 
+      const adminGamesRes = await adminGamesPromise;
+      const adminGames: NormalizedMatch[] = (adminGamesRes.data || []).map((g: any) => {
+        const commence = new Date(g.start_time);
+        const isLive = g.status === "live";
+        const sportMatch = matchesSport({ sport: g.sport } as MatchData, sportKey);
+        if (!sportMatch && sportKey !== "upcoming") return null;
+        return {
+          matchId: `admin-${g.id}`,
+          league: (g.league || "Custom").toUpperCase(),
+          sport: g.sport,
+          team1: g.home_team,
+          team2: g.away_team,
+          time: isLive ? `${g.current_minute}'` : getTimeUntil(commence),
+          isLive,
+          odds: { home: 1.5, draw: 3.5, away: 4.0 },
+          totalMarkets: 10,
+          commenceTime: g.start_time,
+          gameState: isLive ? { home_score: g.result_home, away_score: g.result_away, period: g.current_period } : null,
+        };
+      }).filter(Boolean) as NormalizedMatch[];
+
+      // Fetch markets for admin games to get real odds
+      if (adminGames.length > 0) {
+        const gameIds = adminGames.map(g => g.matchId.replace("admin-", ""));
+        const { data: markets } = await supabase.from("admin_game_markets").select("*").in("game_id", gameIds).eq("market_type", "match_result");
+        if (markets) {
+          markets.forEach((m: any) => {
+            const game = adminGames.find(g => g.matchId === `admin-${m.game_id}`);
+            if (game && m.selections) {
+              const sels = m.selections as { name: string; odds: number }[];
+              game.odds = {
+                home: sels.find(s => s.name.toLowerCase().includes("home"))?.odds || 1.5,
+                draw: sels.find(s => s.name.toLowerCase().includes("draw"))?.odds || 0,
+                away: sels.find(s => s.name.toLowerCase().includes("away"))?.odds || 2.5,
+              };
+            }
+          });
+          // Count total markets per game
+          const { data: allMarkets } = await supabase.from("admin_game_markets").select("game_id").in("game_id", gameIds).eq("is_active", true);
+          if (allMarkets) {
+            const countMap = new Map<string, number>();
+            allMarkets.forEach((m: any) => countMap.set(m.game_id, (countMap.get(m.game_id) || 0) + 1));
+            adminGames.forEach(g => {
+              g.totalMarkets = countMap.get(g.matchId.replace("admin-", "")) || 1;
+            });
+          }
+        }
+      }
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch odds: ${response.status}`);
+        setMatches([...adminGames, ...getFallbackMatches(sportKey)]);
+        setNotice(adminGames.length > 0 ? null : FALLBACK_NOTICE);
+        setLastUpdated(new Date());
+        return;
       }
 
       const result = await response.json();
 
-      // Handle fallback signal from edge function
       if (result.fallback || result.error) {
-        applyFallback();
+        setMatches([...adminGames, ...getFallbackMatches(sportKey)]);
+        setNotice(adminGames.length > 0 ? null : FALLBACK_NOTICE);
+        setLastUpdated(new Date());
         return;
       }
 
       const events: SharpEvent[] = result.data || [];
 
       if (events.length === 0) {
-        applyFallback();
+        setMatches([...adminGames, ...getFallbackMatches(sportKey)]);
+        setNotice(adminGames.length > 0 ? null : FALLBACK_NOTICE);
+        setLastUpdated(new Date());
         return;
       }
 
-      setMatches(normalizeSharpEvents(events));
+      setMatches([...adminGames, ...normalizeSharpEvents(events)]);
       setLastUpdated(new Date());
     } catch {
       applyFallback();
