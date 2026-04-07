@@ -13,7 +13,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify caller is admin
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "");
     
@@ -28,18 +27,67 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Check admin role
     const { data: isAdmin } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
     if (!isAdmin) throw new Error("Not authorized");
 
     const body = await req.json();
-    const { action, target_user_id } = body;
+    const { action } = body;
 
-    if (action === "delete_user" && target_user_id) {
-      // Delete from auth (cascades to profiles via trigger)
-      const { error } = await adminClient.auth.admin.deleteUser(target_user_id);
+    if (action === "delete_user" && body.target_user_id) {
+      const { error } = await adminClient.auth.admin.deleteUser(body.target_user_id);
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (action === "register_user") {
+      const { email, username, password } = body;
+      if (!email || !username || !password) throw new Error("Missing fields");
+      
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { username },
+      });
+      if (createError) throw createError;
+      
+      return new Response(JSON.stringify({ success: true, userId: newUser.user.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "create_admin") {
+      const { email, username, password } = body;
+      if (!email || !username || !password) throw new Error("Missing fields");
+      
+      // Check if user exists
+      const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+      const existing = existingUsers?.users?.find((u: any) => u.email === email);
+      
+      let userId: string;
+      if (existing) {
+        userId = existing.id;
+      } else {
+        const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { username },
+        });
+        if (createError) throw createError;
+        userId = newUser.user.id;
+      }
+      
+      // Assign admin role
+      const { error: roleError } = await adminClient.from("user_roles").upsert(
+        { user_id: userId, role: "admin" },
+        { onConflict: "user_id,role" }
+      );
+      if (roleError) throw roleError;
+      
+      return new Response(JSON.stringify({ success: true, userId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
