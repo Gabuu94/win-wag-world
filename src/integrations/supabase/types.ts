@@ -217,8 +217,11 @@ export type Database = {
       profiles: {
         Row: {
           balance: number
+          country: string | null
           created_at: string
+          currency: string | null
           id: string
+          phone: string | null
           referral_code: string | null
           total_wagered: number
           updated_at: string
@@ -227,8 +230,11 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          country?: string | null
           created_at?: string
+          currency?: string | null
           id?: string
+          phone?: string | null
           referral_code?: string | null
           total_wagered?: number
           updated_at?: string
@@ -237,8 +243,11 @@ export type Database = {
         }
         Update: {
           balance?: number
+          country?: string | null
           created_at?: string
+          currency?: string | null
           id?: string
+          phone?: string | null
           referral_code?: string | null
           total_wagered?: number
           updated_at?: string
@@ -319,8 +328,36 @@ export type Database = {
         }
         Relationships: []
       }
+      support_conversations: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
+          attachment_url: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -329,6 +366,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_url?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -337,6 +375,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_url?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
