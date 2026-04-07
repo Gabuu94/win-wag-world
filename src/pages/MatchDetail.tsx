@@ -57,7 +57,7 @@ const MatchDetail = () => {
     const fetchAdminMarkets = async () => {
       setMarketsLoading(true);
       const { data } = await supabase.from("admin_game_markets").select("*").eq("game_id", adminGameId).eq("is_active", true);
-      setAdminMarkets((data as AdminMarket[]) || []);
+      setAdminMarkets((data as unknown as AdminMarket[]) || []);
       // Get live game data
       const { data: game } = await supabase.from("admin_games").select("*").eq("id", adminGameId).single();
       if (game) setLiveGame(game);
