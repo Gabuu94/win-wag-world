@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Eye, EyeOff, Edit, ChevronDown, ChevronUp, Save } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, Save, Users, DollarSign, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 
@@ -46,7 +46,6 @@ const BASKETBALL_MARKETS = [
   { type: "q4_winner", name: "4th Quarter Winner", selections: [{ name: "Home", odds: 1.9 }, { name: "Away", odds: 1.9 }] },
   { type: "first_half_winner", name: "First Half Winner", selections: [{ name: "Home", odds: 1.85 }, { name: "Away", odds: 1.95 }] },
   { type: "overtime", name: "Will There Be Overtime?", selections: [{ name: "Yes", odds: 6.0 }, { name: "No", odds: 1.1 }] },
-  { type: "highest_scoring_quarter", name: "Highest Scoring Quarter", selections: [{ name: "Q1", odds: 4.0 }, { name: "Q2", odds: 3.5 }, { name: "Q3", odds: 3.5 }, { name: "Q4", odds: 3.5 }] },
 ];
 
 const DEFAULT_MARKETS: Record<string, typeof FOOTBALL_MARKETS> = {
@@ -61,9 +60,32 @@ const DEFAULT_MARKETS: Record<string, typeof FOOTBALL_MARKETS> = {
     { type: "match_winner", name: "Fight Winner", selections: [{ name: "Fighter 1", odds: 1.6 }, { name: "Fighter 2", odds: 2.3 }] },
     { type: "method", name: "Method of Victory", selections: [{ name: "KO/TKO", odds: 2.2 }, { name: "Decision", odds: 2.8 }, { name: "Submission", odds: 4.5 }] },
     { type: "rounds", name: "Total Rounds Over/Under 2.5", selections: [{ name: "Over", odds: 1.7 }, { name: "Under", odds: 2.1 }] },
-    { type: "distance", name: "Fight Goes the Distance", selections: [{ name: "Yes", odds: 2.3 }, { name: "No", odds: 1.6 }] },
   ],
 };
+
+// Calculate end time from start time + sport duration + extra minutes
+function calcEndTime(startTime: string, sport: string, extraMinutes: number, hasExtraTime: boolean): string {
+  if (!startTime) return "";
+  const start = new Date(startTime);
+  let durationMins = 90; // football default (45+45)
+  if (sport === "basketball") durationMins = 48;
+  else if (sport === "tennis") durationMins = 120;
+  else if (sport === "mma") durationMins = 25;
+  else if (sport === "hockey") durationMins = 60;
+  else if (sport === "baseball") durationMins = 180;
+  else if (sport === "americanfootball") durationMins = 60;
+  else if (sport === "cricket") durationMins = 240;
+
+  // Add 15 min half-time for football, 20 min for basketball
+  if (sport === "football") durationMins += 15;
+  if (sport === "basketball") durationMins += 15;
+  if (hasExtraTime && sport === "football") durationMins += 30;
+
+  durationMins += extraMinutes;
+
+  const end = new Date(start.getTime() + durationMins * 60000);
+  return end.toISOString().slice(0, 16);
+}
 
 interface GameForm {
   sport: string;
@@ -71,10 +93,15 @@ interface GameForm {
   away_team: string;
   league: string;
   start_time: string;
-  end_time: string;
+  extra_minutes: number;
   has_extra_time: boolean;
   has_penalties: boolean;
   markets: { type: string; name: string; selections: { name: string; odds: number }[]; enabled: boolean }[];
+}
+
+interface GameStats {
+  total_bets: number;
+  total_staked: number;
 }
 
 const AdminGameCreator = () => {
@@ -82,6 +109,7 @@ const AdminGameCreator = () => {
   const [showForm, setShowForm] = useState(false);
   const [expandedGame, setExpandedGame] = useState<string | null>(null);
   const [resultForm, setResultForm] = useState<Record<string, any>>({});
+  const [gameStats, setGameStats] = useState<Record<string, GameStats>>({});
 
   const defaultForm: GameForm = {
     sport: "football",
@@ -89,7 +117,7 @@ const AdminGameCreator = () => {
     away_team: "",
     league: "",
     start_time: "",
-    end_time: "",
+    extra_minutes: 0,
     has_extra_time: false,
     has_penalties: false,
     markets: (DEFAULT_MARKETS["football"] || []).map((m) => ({ ...m, enabled: true })),
@@ -99,10 +127,43 @@ const AdminGameCreator = () => {
 
   const fetchGames = async () => {
     const { data } = await supabase.from("admin_games").select("*").order("created_at", { ascending: false });
-    setGames((data as any[]) || []);
+    const gamesData = (data as any[]) || [];
+    setGames(gamesData);
+
+    // Fetch bet stats for each game
+    if (gamesData.length > 0) {
+      const gameIds = gamesData.map(g => g.id);
+      const { data: bets } = await supabase.from("bets").select("selections, stake");
+      if (bets) {
+        const stats: Record<string, GameStats> = {};
+        gameIds.forEach(id => { stats[id] = { total_bets: 0, total_staked: 0 }; });
+        bets.forEach((bet: any) => {
+          const sels = bet.selections as any[];
+          sels?.forEach((sel: any) => {
+            const matchLabel = sel.matchLabel || "";
+            gameIds.forEach(id => {
+              const game = gamesData.find((g: any) => g.id === id);
+              if (game && matchLabel.includes(game.home_team) && matchLabel.includes(game.away_team)) {
+                stats[id].total_bets++;
+                stats[id].total_staked += Number(bet.stake);
+              }
+            });
+          });
+        });
+        setGameStats(stats);
+      }
+    }
   };
 
   useEffect(() => { fetchGames(); }, []);
+
+  // Realtime updates for admin games
+  useEffect(() => {
+    const channel = supabase.channel("admin-games-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_games" }, () => fetchGames())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const handleSportChange = (sport: string) => {
     const markets = (DEFAULT_MARKETS[sport] || DEFAULT_MARKETS["football"]).map((m) => ({ ...m, enabled: true }));
@@ -145,13 +206,15 @@ const AdminGameCreator = () => {
       return;
     }
 
+    const endTime = calcEndTime(form.start_time, form.sport, form.extra_minutes, form.has_extra_time);
+
     const { data: game, error: gameError } = await supabase.from("admin_games").insert({
       sport: form.sport,
       home_team: form.home_team,
       away_team: form.away_team,
       league: form.league || "Custom League",
       start_time: form.start_time,
-      end_time: form.end_time || null,
+      end_time: endTime || null,
       has_extra_time: form.has_extra_time,
       has_penalties: form.has_penalties,
     }).select().single();
@@ -183,32 +246,177 @@ const AdminGameCreator = () => {
 
   const deleteGame = async (id: string) => {
     if (!confirm("Delete this game?")) return;
+    await supabase.from("admin_game_markets").delete().eq("game_id", id);
     await supabase.from("admin_games").delete().eq("id", id);
     fetchGames();
   };
 
   const updateGameResults = async (gameId: string) => {
     const r = resultForm[gameId] || {};
-    await supabase.from("admin_games").update({
-      result_home: r.result_home ?? null,
-      result_away: r.result_away ?? null,
-      half_time_home: r.half_time_home ?? null,
-      half_time_away: r.half_time_away ?? null,
-      current_minute: r.current_minute ?? 0,
-      current_period: r.current_period ?? "not_started",
-      status: r.status ?? "upcoming",
-      total_corners_home: r.total_corners_home ?? 0,
-      total_corners_away: r.total_corners_away ?? 0,
-      total_cards_home: r.total_cards_home ?? 0,
-      total_cards_away: r.total_cards_away ?? 0,
-      extra_time_result_home: r.extra_time_result_home ?? null,
-      extra_time_result_away: r.extra_time_result_away ?? null,
-      penalty_home: r.penalty_home ?? null,
-      penalty_away: r.penalty_away ?? null,
-      quarters_scores: r.quarters_scores ? JSON.parse(r.quarters_scores) : [],
-    }).eq("id", gameId);
+    const game = games.find(g => g.id === gameId);
+    
+    const updateData: any = {
+      result_home: r.result_home ?? game?.result_home ?? null,
+      result_away: r.result_away ?? game?.result_away ?? null,
+      half_time_home: r.half_time_home ?? game?.half_time_home ?? null,
+      half_time_away: r.half_time_away ?? game?.half_time_away ?? null,
+      current_minute: r.current_minute ?? game?.current_minute ?? 0,
+      current_period: r.current_period ?? game?.current_period ?? "not_started",
+      status: r.status ?? game?.status ?? "upcoming",
+      total_corners_home: r.total_corners_home ?? game?.total_corners_home ?? 0,
+      total_corners_away: r.total_corners_away ?? game?.total_corners_away ?? 0,
+      total_cards_home: r.total_cards_home ?? game?.total_cards_home ?? 0,
+      total_cards_away: r.total_cards_away ?? game?.total_cards_away ?? 0,
+      extra_time_result_home: r.extra_time_result_home ?? game?.extra_time_result_home ?? null,
+      extra_time_result_away: r.extra_time_result_away ?? game?.extra_time_result_away ?? null,
+      penalty_home: r.penalty_home ?? game?.penalty_home ?? null,
+      penalty_away: r.penalty_away ?? game?.penalty_away ?? null,
+    };
+    
+    await supabase.from("admin_games").update(updateData).eq("id", gameId);
+
+    // If game is finished, settle bets
+    if (updateData.status === "finished") {
+      await settleBetsForGame(gameId, updateData, game);
+    }
+
     toast({ title: "Results updated!" });
     fetchGames();
+  };
+
+  const settleBetsForGame = async (gameId: string, results: any, game: any) => {
+    // Get all markets for this game
+    const { data: markets } = await supabase.from("admin_game_markets").select("*").eq("game_id", gameId);
+    if (!markets) return;
+
+    // Get all pending bets
+    const { data: allBets } = await supabase.from("bets").select("*").eq("status", "pending");
+    if (!allBets) return;
+
+    const matchLabel = `${game.home_team} vs ${game.away_team}`;
+    const homeScore = results.result_home ?? 0;
+    const awayScore = results.result_away ?? 0;
+    const htHome = results.half_time_home ?? 0;
+    const htAway = results.half_time_away ?? 0;
+    const totalCorners = (results.total_corners_home ?? 0) + (results.total_corners_away ?? 0);
+    const totalCards = (results.total_cards_home ?? 0) + (results.total_cards_away ?? 0);
+    const totalGoals = homeScore + awayScore;
+
+    // Determine winning selections for each market
+    const winningPicks: Record<string, string[]> = {};
+
+    markets.forEach((m: any) => {
+      const wins: string[] = [];
+      switch (m.market_type) {
+        case "match_result":
+          if (homeScore > awayScore) wins.push("Home Win");
+          else if (homeScore < awayScore) wins.push("Away Win");
+          else wins.push("Draw");
+          break;
+        case "btts":
+          wins.push(homeScore > 0 && awayScore > 0 ? "Yes" : "No");
+          break;
+        case "over_under_2_5":
+          wins.push(totalGoals > 2.5 ? "Over 2.5" : "Under 2.5");
+          break;
+        case "over_under_1_5":
+          wins.push(totalGoals > 1.5 ? "Over 1.5" : "Under 1.5");
+          break;
+        case "over_under_3_5":
+          wins.push(totalGoals > 3.5 ? "Over 3.5" : "Under 3.5");
+          break;
+        case "double_chance":
+          if (homeScore >= awayScore) wins.push("1X");
+          if (homeScore !== awayScore) wins.push("12");
+          if (awayScore >= homeScore) wins.push("X2");
+          break;
+        case "first_half":
+          if (htHome > htAway) wins.push("Home");
+          else if (htHome < htAway) wins.push("Away");
+          else wins.push("Draw");
+          break;
+        case "corners_total":
+          wins.push(totalCorners > 9.5 ? "Over 9.5" : "Under 9.5");
+          break;
+        case "cards_total":
+          wins.push(totalCards > 3.5 ? "Over 3.5" : "Under 3.5");
+          break;
+        case "correct_score":
+          wins.push(`${homeScore}-${awayScore}`);
+          break;
+        case "clean_sheet_home":
+          wins.push(awayScore === 0 ? "Yes" : "No");
+          break;
+        case "clean_sheet_away":
+          wins.push(homeScore === 0 ? "Yes" : "No");
+          break;
+        case "win_to_nil_home":
+          wins.push(homeScore > 0 && awayScore === 0 ? "Yes" : "No");
+          break;
+        case "extra_time":
+          wins.push(game.has_extra_time && results.extra_time_result_home != null ? "Yes" : "No");
+          break;
+        default:
+          break;
+      }
+      winningPicks[m.market_type] = wins;
+    });
+
+    // Settle each bet
+    for (const bet of allBets) {
+      const sels = bet.selections as any[];
+      const matchedSels = sels.filter((s: any) => {
+        const label = s.matchLabel || "";
+        return label.includes(game.home_team) && label.includes(game.away_team);
+      });
+
+      if (matchedSels.length === 0) continue;
+
+      // Check if all selections for this game are winning
+      let allWon = true;
+      for (const sel of matchedSels) {
+        const pick = sel.pick || "";
+        let isWin = false;
+        for (const [, wins] of Object.entries(winningPicks)) {
+          if (wins.some(w => pick.includes(w) || w.includes(pick))) {
+            isWin = true;
+            break;
+          }
+        }
+        if (!isWin) { allWon = false; break; }
+      }
+
+      // If all sels in bet relate to this game only, settle
+      const otherSels = sels.filter((s: any) => {
+        const label = s.matchLabel || "";
+        return !(label.includes(game.home_team) && label.includes(game.away_team));
+      });
+
+      if (otherSels.length === 0) {
+        const newStatus = allWon ? "won" : "lost";
+        await supabase.from("bets").update({ status: newStatus }).eq("id", bet.id);
+        if (allWon) {
+          // Credit winnings
+          const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", bet.user_id).single();
+          if (profile) {
+            await supabase.from("profiles").update({ balance: Number(profile.balance) + Number(bet.potential_win) }).eq("user_id", bet.user_id);
+            await supabase.from("notifications").insert({
+              user_id: bet.user_id,
+              title: "Bet Won! 🎉",
+              message: `Your bet on ${matchLabel} won $${Number(bet.potential_win).toFixed(2)}!`,
+              type: "win",
+            });
+          }
+        } else {
+          await supabase.from("notifications").insert({
+            user_id: bet.user_id,
+            title: "Bet Lost",
+            message: `Your bet on ${matchLabel} did not win. Better luck next time!`,
+            type: "loss",
+          });
+        }
+      }
+    }
   };
 
   return (
@@ -257,10 +465,19 @@ const AdminGameCreator = () => {
               <Input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">End Time</label>
-              <Input type="datetime-local" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
+              <label className="text-xs text-muted-foreground mb-1 block">Extra Minutes (stoppage)</label>
+              <Input type="number" value={form.extra_minutes} onChange={(e) => setForm({ ...form, extra_minutes: Number(e.target.value) })} placeholder="0" min={0} />
             </div>
           </div>
+
+          {form.start_time && (
+            <div className="bg-secondary/50 rounded-md p-3">
+              <p className="text-xs text-muted-foreground">
+                <Clock className="w-3 h-3 inline mr-1" />
+                Calculated end time: <strong>{new Date(calcEndTime(form.start_time, form.sport, form.extra_minutes, form.has_extra_time)).toLocaleString()}</strong>
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm">
@@ -309,133 +526,145 @@ const AdminGameCreator = () => {
       )}
 
       <div className="space-y-3">
-        {games.map((g) => (
-          <div key={g.id} className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs text-muted-foreground uppercase">{g.sport} · {g.league}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${g.is_published ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
-                    {g.is_published ? "Published" : "Draft"}
-                  </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full bg-secondary`}>{g.status}</span>
+        {games.map((g) => {
+          const stats = gameStats[g.id] || { total_bets: 0, total_staked: 0 };
+          return (
+            <div key={g.id} className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-muted-foreground uppercase">{g.sport} · {g.league}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${g.is_published ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
+                      {g.is_published ? "Published" : "Draft"}
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${g.status === "live" ? "bg-red-500/20 text-red-400" : g.status === "finished" ? "bg-blue-500/20 text-blue-400" : "bg-secondary"}`}>{g.status}</span>
+                  </div>
+                  <h3 className="font-bold">{g.home_team} vs {g.away_team}</h3>
+                  <p className="text-xs text-muted-foreground">{new Date(g.start_time).toLocaleString()}</p>
+                  {g.result_home !== null && <p className="text-sm font-medium text-primary mt-1">Score: {g.result_home} - {g.result_away}</p>}
+                  {/* Betting stats */}
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Users className="w-3 h-3" /> {stats.total_bets} bets
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <DollarSign className="w-3 h-3" /> ${stats.total_staked.toFixed(2)} staked
+                    </span>
+                  </div>
                 </div>
-                <h3 className="font-bold">{g.home_team} vs {g.away_team}</h3>
-                <p className="text-xs text-muted-foreground">{new Date(g.start_time).toLocaleString()}</p>
-                {g.result_home !== null && <p className="text-sm font-medium text-primary mt-1">Score: {g.result_home} - {g.result_away}</p>}
+                <div className="flex gap-1">
+                  <button onClick={() => togglePublish(g.id, g.is_published)} className="p-2 rounded hover:bg-secondary" title={g.is_published ? "Unpublish" : "Publish"}>
+                    {g.is_published ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-green-400" />}
+                  </button>
+                  <button onClick={() => setExpandedGame(expandedGame === g.id ? null : g.id)} className="p-2 rounded hover:bg-secondary">
+                    {expandedGame === g.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  <button onClick={() => deleteGame(g.id)} className="p-2 rounded hover:bg-destructive/10 text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-1">
-                <button onClick={() => togglePublish(g.id, g.is_published)} className="p-2 rounded hover:bg-secondary" title={g.is_published ? "Unpublish" : "Publish"}>
-                  {g.is_published ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-green-400" />}
-                </button>
-                <button onClick={() => setExpandedGame(expandedGame === g.id ? null : g.id)} className="p-2 rounded hover:bg-secondary">
-                  {expandedGame === g.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                <button onClick={() => deleteGame(g.id)} className="p-2 rounded hover:bg-destructive/10 text-destructive">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
 
-            {expandedGame === g.id && (
-              <div className="border-t border-border p-4 space-y-4">
-                <h4 className="font-medium text-sm">Update Results & Status</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Status</label>
-                    <select value={resultForm[g.id]?.status ?? g.status} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], status: e.target.value } })} className="w-full bg-secondary rounded px-2 py-1.5 text-xs outline-none">
-                      <option value="upcoming">Upcoming</option>
-                      <option value="live">Live</option>
-                      <option value="finished">Finished</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Period</label>
-                    <select value={resultForm[g.id]?.current_period ?? g.current_period} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], current_period: e.target.value } })} className="w-full bg-secondary rounded px-2 py-1.5 text-xs outline-none">
-                      <option value="not_started">Not Started</option>
-                      <option value="first_half">1st Half</option>
-                      <option value="half_time">Half Time</option>
-                      <option value="second_half">2nd Half</option>
-                      <option value="extra_time">Extra Time</option>
-                      <option value="penalties">Penalties</option>
-                      <option value="q1">Q1</option><option value="q2">Q2</option><option value="q3">Q3</option><option value="q4">Q4</option>
-                      <option value="overtime">Overtime</option>
-                      <option value="full_time">Full Time</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Minute</label>
-                    <Input type="number" value={resultForm[g.id]?.current_minute ?? g.current_minute ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], current_minute: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Home Score</label>
-                    <Input type="number" value={resultForm[g.id]?.result_home ?? g.result_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], result_home: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Away Score</label>
-                    <Input type="number" value={resultForm[g.id]?.result_away ?? g.result_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], result_away: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">HT Home</label>
-                    <Input type="number" value={resultForm[g.id]?.half_time_home ?? g.half_time_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], half_time_home: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">HT Away</label>
-                    <Input type="number" value={resultForm[g.id]?.half_time_away ?? g.half_time_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], half_time_away: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Corners Home</label>
-                    <Input type="number" value={resultForm[g.id]?.total_corners_home ?? g.total_corners_home ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_corners_home: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Corners Away</label>
-                    <Input type="number" value={resultForm[g.id]?.total_corners_away ?? g.total_corners_away ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_corners_away: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Cards Home</label>
-                    <Input type="number" value={resultForm[g.id]?.total_cards_home ?? g.total_cards_home ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_cards_home: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Cards Away</label>
-                    <Input type="number" value={resultForm[g.id]?.total_cards_away ?? g.total_cards_away ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_cards_away: Number(e.target.value) } })} className="h-7 text-xs" />
-                  </div>
-                </div>
-                {g.has_extra_time && (
+              {expandedGame === g.id && (
+                <div className="border-t border-border p-4 space-y-4">
+                  <h4 className="font-medium text-sm">Update Results & Status</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <label className="text-[10px] text-muted-foreground">ET Home</label>
-                      <Input type="number" value={resultForm[g.id]?.extra_time_result_home ?? g.extra_time_result_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], extra_time_result_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                      <label className="text-[10px] text-muted-foreground">Status</label>
+                      <select value={resultForm[g.id]?.status ?? g.status} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], status: e.target.value } })} className="w-full bg-secondary rounded px-2 py-1.5 text-xs outline-none">
+                        <option value="upcoming">Upcoming</option>
+                        <option value="live">Live</option>
+                        <option value="finished">Finished</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-muted-foreground">ET Away</label>
-                      <Input type="number" value={resultForm[g.id]?.extra_time_result_away ?? g.extra_time_result_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], extra_time_result_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                      <label className="text-[10px] text-muted-foreground">Period</label>
+                      <select value={resultForm[g.id]?.current_period ?? g.current_period} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], current_period: e.target.value } })} className="w-full bg-secondary rounded px-2 py-1.5 text-xs outline-none">
+                        <option value="not_started">Not Started</option>
+                        <option value="first_half">1st Half</option>
+                        <option value="half_time">Half Time</option>
+                        <option value="second_half">2nd Half</option>
+                        <option value="extra_time">Extra Time</option>
+                        <option value="penalties">Penalties</option>
+                        <option value="q1">Q1</option><option value="q2">Q2</option><option value="q3">Q3</option><option value="q4">Q4</option>
+                        <option value="overtime">Overtime</option>
+                        <option value="full_time">Full Time</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Minute</label>
+                      <Input type="number" value={resultForm[g.id]?.current_minute ?? g.current_minute ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], current_minute: Number(e.target.value) } })} className="h-7 text-xs" />
                     </div>
                   </div>
-                )}
-                {g.has_penalties && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <label className="text-[10px] text-muted-foreground">Penalties Home</label>
-                      <Input type="number" value={resultForm[g.id]?.penalty_home ?? g.penalty_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], penalty_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                      <label className="text-[10px] text-muted-foreground">Home Score</label>
+                      <Input type="number" value={resultForm[g.id]?.result_home ?? g.result_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], result_home: Number(e.target.value) } })} className="h-7 text-xs" />
                     </div>
                     <div>
-                      <label className="text-[10px] text-muted-foreground">Penalties Away</label>
-                      <Input type="number" value={resultForm[g.id]?.penalty_away ?? g.penalty_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], penalty_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                      <label className="text-[10px] text-muted-foreground">Away Score</label>
+                      <Input type="number" value={resultForm[g.id]?.result_away ?? g.result_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], result_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">HT Home</label>
+                      <Input type="number" value={resultForm[g.id]?.half_time_home ?? g.half_time_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], half_time_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">HT Away</label>
+                      <Input type="number" value={resultForm[g.id]?.half_time_away ?? g.half_time_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], half_time_away: Number(e.target.value) } })} className="h-7 text-xs" />
                     </div>
                   </div>
-                )}
-                <button onClick={() => updateGameResults(g.id)} className="flex items-center gap-1 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm">
-                  <Save className="w-4 h-4" /> Save Results
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Corners Home</label>
+                      <Input type="number" value={resultForm[g.id]?.total_corners_home ?? g.total_corners_home ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_corners_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Corners Away</label>
+                      <Input type="number" value={resultForm[g.id]?.total_corners_away ?? g.total_corners_away ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_corners_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Cards Home</label>
+                      <Input type="number" value={resultForm[g.id]?.total_cards_home ?? g.total_cards_home ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_cards_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Cards Away</label>
+                      <Input type="number" value={resultForm[g.id]?.total_cards_away ?? g.total_cards_away ?? 0} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], total_cards_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                    </div>
+                  </div>
+                  {g.has_extra_time && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">ET Home</label>
+                        <Input type="number" value={resultForm[g.id]?.extra_time_result_home ?? g.extra_time_result_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], extra_time_result_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">ET Away</label>
+                        <Input type="number" value={resultForm[g.id]?.extra_time_result_away ?? g.extra_time_result_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], extra_time_result_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                      </div>
+                    </div>
+                  )}
+                  {g.has_penalties && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Penalties Home</label>
+                        <Input type="number" value={resultForm[g.id]?.penalty_home ?? g.penalty_home ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], penalty_home: Number(e.target.value) } })} className="h-7 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Penalties Away</label>
+                        <Input type="number" value={resultForm[g.id]?.penalty_away ?? g.penalty_away ?? ""} onChange={(e) => setResultForm({ ...resultForm, [g.id]: { ...resultForm[g.id], penalty_away: Number(e.target.value) } })} className="h-7 text-xs" />
+                      </div>
+                    </div>
+                  )}
+                  <button onClick={() => updateGameResults(g.id)} className="flex items-center gap-1 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm">
+                    <Save className="w-4 h-4" /> Save Results {(resultForm[g.id]?.status ?? g.status) === "finished" && "& Settle Bets"}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
         {games.length === 0 && <p className="text-center py-8 text-muted-foreground">No games created yet</p>}
       </div>
     </div>
