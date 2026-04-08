@@ -59,6 +59,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
 
   const navItems = [
     { label: "Home", icon: Home, path: "/" },
+    { label: "Virtual Games", icon: Gamepad2, path: "/virtuals" },
     { label: "Sport", icon: Trophy, path: "/" },
     { label: "Live Sport", icon: Tv, path: "/" },
     { label: "Deposit Guide", icon: BookOpen, path: "/" },

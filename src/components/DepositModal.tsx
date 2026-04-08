@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock } from "lucide-react";
+import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type PaymentTab = "mpesa" | "crypto" | "card" | "bank";
+type PaymentTab = "mpesa" | "crypto" | "card" | "bank" | "airtel" | "paypal";
 
 const cryptoCurrencies = [
   { id: "btc", label: "Bitcoin", symbol: "BTC" },
@@ -19,8 +19,10 @@ const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
 const tabs: { key: PaymentTab; label: string; icon: any; active: boolean }[] = [
   { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: true },
   { key: "crypto", label: "Crypto", icon: Bitcoin, active: true },
+  { key: "airtel", label: "Airtel", icon: Smartphone, active: false },
   { key: "card", label: "Card", icon: CreditCard, active: false },
   { key: "bank", label: "Bank", icon: Landmark, active: false },
+  { key: "paypal", label: "PayPal", icon: Wallet, active: false },
 ];
 
 const DepositModal = () => {
@@ -141,7 +143,7 @@ const DepositModal = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-4 border-b border-border">
+        <div className="grid grid-cols-3 sm:grid-cols-6 border-b border-border overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -278,13 +280,14 @@ const DepositModal = () => {
           )}
 
           {/* Coming Soon tabs */}
-          {(tab === "card" || tab === "bank") && (
+          {(tab === "card" || tab === "bank" || tab === "airtel" || tab === "paypal") && (
             <div className="text-center py-8">
               <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <h3 className="font-display text-lg font-bold">Coming Soon</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {tab === "card" ? "Card" : "Bank transfer"} deposits will be available soon.
+                {tab === "card" ? "Visa/Mastercard" : tab === "bank" ? "Bank transfer" : tab === "airtel" ? "Airtel Money" : "PayPal"} deposits will be available soon.
               </p>
+              <p className="text-xs text-muted-foreground mt-2">Use M-Pesa or Crypto in the meantime.</p>
             </div>
           )}
 
