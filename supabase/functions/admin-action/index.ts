@@ -43,6 +43,15 @@ Deno.serve(async (req) => {
       const { email, username, password } = body;
       if (!email || !username || !password) throw new Error("Missing fields");
       
+      // Check if user already exists
+      const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+      const existing = existingUsers?.users?.find((u: any) => u.email === email);
+      if (existing) {
+        return new Response(JSON.stringify({ error: "A user with this email already exists" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
         email,
         password,
