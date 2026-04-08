@@ -74,9 +74,9 @@ const TopBar = ({ activeSport = "upcoming", onSportChange, searchQuery = "", onS
             </button>
 
             {isLoggedIn && profile && (
-              <div className="hidden sm:flex items-center gap-2 bg-secondary rounded-md px-3 py-2">
+              <div className="flex items-center gap-1.5 bg-secondary rounded-md px-2 sm:px-3 py-2">
                 <Wallet className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">${profile.balance.toFixed(2)}</span>
+                <span className="text-xs sm:text-sm font-medium">{profile.currency || "KES"} {profile.balance.toFixed(2)}</span>
               </div>
             )}
 

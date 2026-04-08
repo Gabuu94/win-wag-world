@@ -6,6 +6,9 @@ import type { User, Session } from "@supabase/supabase-js";
 export interface ProfileData {
   username: string;
   balance: number;
+  phone?: string;
+  country?: string;
+  currency?: string;
 }
 
 interface AuthContextType {
@@ -14,7 +17,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  signup: (username: string, email: string, password: string, referralCode?: string) => Promise<{ error?: string }>;
+  signup: (username: string, email: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   deposit: (amount: number) => Promise<boolean>;
   withdraw: (amount: number) => Promise<boolean>;
@@ -44,11 +47,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("username, balance")
+      .select("username, balance, phone, country, currency")
       .eq("user_id", userId)
       .single();
     if (data) {
-      setProfile({ username: data.username, balance: Number(data.balance) });
+      setProfile({ username: data.username, balance: Number(data.balance), phone: data.phone || undefined, country: data.country || undefined, currency: data.currency || undefined });
     }
   }, []);
 
@@ -130,9 +133,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return {};
   }, []);
 
-  const signup = useCallback(async (username: string, email: string, password: string, referralCode?: string) => {
+  const signup = useCallback(async (username: string, email: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string) => {
     const metadata: Record<string, string> = { username };
     if (referralCode) metadata.referral_code = referralCode;
+    if (phone) metadata.phone = phone;
+    if (country) metadata.country = country;
+    if (currency) metadata.currency = currency;
     
     const { error } = await supabase.auth.signUp({
       email,
