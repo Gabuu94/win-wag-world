@@ -19,6 +19,7 @@ import VIP from "./pages/VIP";
 import Voucher from "./pages/Voucher";
 import Verification from "./pages/Verification";
 import Promotions from "./pages/Promotions";
+import VirtualGames from "./pages/VirtualGames";
 import NotFound from "./pages/NotFound";
 
 // Admin
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/voucher" element={<Voucher />} />
               <Route path="/verification" element={<Verification />} />
               <Route path="/promotions" element={<Promotions />} />
+              <Route path="/virtuals" element={<VirtualGames />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
