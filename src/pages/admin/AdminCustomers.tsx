@@ -162,7 +162,7 @@ const AdminCustomers = () => {
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4 flex items-center justify-between flex-wrap gap-2">
           <span className="text-sm font-medium">{selectedIds.size} user(s) selected</span>
           <div className="flex gap-2">
-            <button onClick={handleBulkCredit} className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded-md text-xs">
+            <button onClick={handleBulkCredit} className="flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-xs">
               <CheckCircle className="w-3 h-3" /> Credit Balance
             </button>
             <button onClick={handleBulkDelete} className="flex items-center gap-1 bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md text-xs">
