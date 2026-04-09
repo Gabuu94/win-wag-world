@@ -8,6 +8,7 @@ import DiceGame from "@/components/games/DiceGame";
 import PlinkoGame from "@/components/games/PlinkoGame";
 import RouletteGame from "@/components/games/RouletteGame";
 import CrashGame from "@/components/games/CrashGame";
+import Leaderboard from "@/components/games/Leaderboard";
 
 type GameType = "aviator" | "mines" | "plinko" | "dice" | "roulette" | "crash";
 
@@ -41,12 +42,11 @@ const VirtualGames = () => {
       <TopBar />
 
       {activeGame ? (
-        /* Full-screen game view */
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-card shrink-0">
             <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition">
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Games</span>
+              <span className="hidden sm:inline">Back</span>
             </button>
             <h2 className="font-display font-bold text-sm flex items-center gap-2">
               {GAMES.find(g => g.id === activeGame)?.name}
@@ -61,7 +61,6 @@ const VirtualGames = () => {
           </div>
         </div>
       ) : (
-        /* Game selection grid */
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="font-display text-2xl font-bold">Virtual Games</h1>
@@ -69,7 +68,7 @@ const VirtualGames = () => {
               {soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
             {GAMES.map((g) => {
               const Icon = g.icon;
               return (
@@ -85,6 +84,7 @@ const VirtualGames = () => {
               );
             })}
           </div>
+          <Leaderboard />
         </div>
       )}
     </div>
