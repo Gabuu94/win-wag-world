@@ -92,8 +92,23 @@ Deno.serve(async (req) => {
     }
 
     const result = await resp.json();
-    const fixtures = result.data || [];
-    console.log(`SportMonks returned ${fixtures.length} fixtures (window ${fmt(start)} → ${fmt(end)})`);
+    const upcomingFixtures = result.data || [];
+    let inplayFixtures: any[] = [];
+    try {
+      if (inResp.ok) {
+        const inJson = await inResp.json();
+        inplayFixtures = inJson.data || [];
+      }
+    } catch (e) {
+      console.error('inplay parse failed', e);
+    }
+    // Merge: in-play first (so live shows), then upcoming. Dedupe by id.
+    const seen = new Set<number>();
+    const fixtures = [...inplayFixtures, ...upcomingFixtures].filter((f: any) => {
+      if (seen.has(f.id)) return false;
+      seen.add(f.id); return true;
+    });
+    console.log(`SportMonks returned ${upcomingFixtures.length} upcoming + ${inplayFixtures.length} in-play (window ${fmt(tomorrow)} → ${fmt(end)})`);
 
     const combined = fixtures.map((f: any) => {
       const participants = f.participants || [];
