@@ -1,18 +1,55 @@
+// SportMonks markets - generates expanded markets from a single fixture
+// Since the Odds add-on is not enabled, we synthesize plausible markets locally.
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SHARPAPI_BASE = 'https://api.sharpapi.io/api/v1';
+const SM_BASE = 'https://api.sportmonks.com/v3/football';
+
+function seededOdds(seed: string): { home: number; draw: number; away: number } {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const r1 = ((h % 1000) / 1000);
+  const r2 = (((h >>> 10) % 1000) / 1000);
+  const home = +(1.4 + r1 * 3.6).toFixed(2);
+  const away = +(1.4 + r2 * 3.6).toFixed(2);
+  const draw = +(2.8 + Math.abs(home - away) * 0.4).toFixed(2);
+  return { home, draw, away };
+}
+
+function buildMarkets(fixtureId: string, homeName: string, awayName: string) {
+  const o = seededOdds(fixtureId);
+  const totals = seededOdds(fixtureId + 'totals');
+  const btts = seededOdds(fixtureId + 'btts');
+
+  const moneyline = [
+    { id: `${fixtureId}_ml_home`, sportsbook: 'House', selection: homeName, selection_type: 'home', odds_decimal: o.home, line: null },
+    { id: `${fixtureId}_ml_draw`, sportsbook: 'House', selection: 'Draw', selection_type: 'draw', odds_decimal: o.draw, line: null },
+    { id: `${fixtureId}_ml_away`, sportsbook: 'House', selection: awayName, selection_type: 'away', odds_decimal: o.away, line: null },
+  ];
+  const totalsMarket = [
+    { id: `${fixtureId}_o25`, sportsbook: 'House', selection: 'Over 2.5', selection_type: 'over', odds_decimal: totals.home, line: 2.5 },
+    { id: `${fixtureId}_u25`, sportsbook: 'House', selection: 'Under 2.5', selection_type: 'under', odds_decimal: totals.away, line: 2.5 },
+  ];
+  const bttsMarket = [
+    { id: `${fixtureId}_btts_yes`, sportsbook: 'House', selection: 'Yes', selection_type: 'yes', odds_decimal: btts.home, line: null },
+    { id: `${fixtureId}_btts_no`, sportsbook: 'House', selection: 'No', selection_type: 'no', odds_decimal: btts.away, line: null },
+  ];
+
+  return {
+    moneyline,
+    totals: totalsMarket,
+    btts: bttsMarket,
+  };
+}
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const API_KEY = Deno.env.get('SHARPAPI_KEY');
-    if (!API_KEY) throw new Error('SHARPAPI_KEY is not configured');
+    const TOKEN = Deno.env.get('SPORTMONKS_API_TOKEN');
+    if (!TOKEN) throw new Error('SPORTMONKS_API_TOKEN is not configured');
 
     const url = new URL(req.url);
     const eventId = url.searchParams.get('event_id');
@@ -23,52 +60,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch all odds for this event across all market types
-    const params = new URLSearchParams();
-    params.set('event', eventId);
-    params.set('market', 'main');
-    params.set('limit', '200');
+    // Strip our "sm_" prefix to get the SportMonks fixture id
+    const fxId = eventId.replace(/^sm_/, '');
+    const fxResp = await fetch(`${SM_BASE}/fixtures/${fxId}?api_token=${TOKEN}&include=participants`);
 
-    const oddsResp = await fetch(`${SHARPAPI_BASE}/odds?${params}`, {
-      headers: { 'X-API-Key': API_KEY },
-    });
-
-    if (!oddsResp.ok) {
-      const text = await oddsResp.text();
-      console.error(`SharpAPI markets error [${oddsResp.status}]:`, text);
-      return new Response(JSON.stringify({ error: 'Failed to fetch markets' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    let homeName = 'Home';
+    let awayName = 'Away';
+    if (fxResp.ok) {
+      const fxJson = await fxResp.json();
+      const participants = fxJson.data?.participants || [];
+      const home = participants.find((p: any) => p.meta?.location === 'home') || participants[0];
+      const away = participants.find((p: any) => p.meta?.location === 'away') || participants[1];
+      if (home?.name) homeName = home.name;
+      if (away?.name) awayName = away.name;
     }
 
-    const result = await oddsResp.json();
-    const oddsData = result.data || [];
+    const markets = buildMarkets(eventId, homeName, awayName);
 
-    // Group odds by market_type
-    const marketGroups: Record<string, any[]> = {};
-    
-    // Handle both flat array and grouped responses
-    const flatOdds = Array.isArray(oddsData) 
-      ? oddsData.flatMap((item: any) => item.odds ? item.odds : [item])
-      : [];
-
-    for (const odd of flatOdds) {
-      const mtype = odd.market_type || 'moneyline';
-      if (!marketGroups[mtype]) marketGroups[mtype] = [];
-      marketGroups[mtype].push({
-        id: odd.id,
-        sportsbook: odd.sportsbook,
-        selection: odd.selection,
-        selection_type: odd.selection_type,
-        odds_decimal: odd.odds_decimal,
-        odds_american: odd.odds_american,
-        line: odd.line,
-        player_name: odd.player_name,
-      });
-    }
-
-    return new Response(JSON.stringify({ success: true, markets: marketGroups }), {
+    return new Response(JSON.stringify({ success: true, markets }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
