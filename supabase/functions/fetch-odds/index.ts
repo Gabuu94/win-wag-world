@@ -93,7 +93,19 @@ Deno.serve(async (req) => {
       const home = participants.find((p: any) => p.meta?.location === 'home') || participants[0] || {};
       const away = participants.find((p: any) => p.meta?.location === 'away') || participants[1] || {};
       const stateCode = f.state?.state || f.state?.short_name || '';
-      const isLive = ['INPLAY_1ST_HALF', 'INPLAY_2ND_HALF', 'HT', 'INPLAY_ET', 'INPLAY_ET_2ND_HALF', 'PEN_LIVE', 'BREAK', 'EXTRA_TIME'].includes(stateCode);
+      const stateName = (f.state?.name || '').toLowerCase();
+      const liveStates = ['INPLAY_1ST_HALF', 'INPLAY_2ND_HALF', 'HT', 'INPLAY_ET', 'INPLAY_ET_2ND_HALF', 'PEN_LIVE', 'BREAK', 'EXTRA_TIME'];
+      const finishedStates = ['FT', 'AET', 'FT_PEN', 'CANC', 'POSTP', 'ABAN', 'AWARDED', 'WO'];
+      const isLive = liveStates.includes(stateCode);
+      const isFinished = finishedStates.includes(stateCode) || stateName.includes('full time') || stateName.includes('finished') || stateName.includes('ended');
+
+      // SportMonks returns naive UTC datetimes ("YYYY-MM-DD HH:mm:ss"). Make ISO-8601 UTC.
+      const rawStart: string = f.starting_at || '';
+      const startIso = rawStart ? rawStart.replace(' ', 'T') + 'Z' : '';
+
+      const homeScore = f.scores?.find?.((s: any) => s.description === 'CURRENT' && s.score?.participant === 'home')?.score?.goals
+        ?? f.scores?.find?.((s: any) => s.description === 'CURRENT')?.score?.goals;
+      const awayScore = f.scores?.find?.((s: any) => s.description === 'CURRENT' && s.score?.participant === 'away')?.score?.goals;
 
       const odds = seededOdds(`${f.id}`);
 
@@ -103,14 +115,22 @@ Deno.serve(async (req) => {
         league: f.league?.name || 'Football',
         home_team: home.name || 'Home',
         away_team: away.name || 'Away',
-        start_time: f.starting_at || '',
+        start_time: startIso,
+        start_time_provider: rawStart,
+        provider_timezone: 'UTC',
         is_live: isLive,
+        is_finished: isFinished,
         book_count: 1,
         markets: [],
-        game_state: f.state ? { status: f.state.name, minute: f.state?.minute ?? null } : null,
+        game_state: f.state ? {
+          status: f.state.name,
+          minute: f.state?.minute ?? null,
+          home_score: typeof homeScore === 'number' ? homeScore : null,
+          away_score: typeof awayScore === 'number' ? awayScore : null,
+        } : null,
         odds,
       };
-    });
+    }).filter((m: any) => !m.is_finished);
 
     return jsonResponse({
       success: true,
