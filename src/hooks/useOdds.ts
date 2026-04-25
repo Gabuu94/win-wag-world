@@ -63,10 +63,12 @@ interface SharpEvent {
   home_team: string;
   away_team: string;
   start_time: string;
+  start_time_provider?: string;
+  provider_timezone?: string;
   is_live: boolean;
   book_count: number;
   markets: string[];
-  game_state?: { home_score?: number; away_score?: number; period?: string; clock?: string } | null;
+  game_state?: { home_score?: number | null; away_score?: number | null; period?: string; clock?: string; status?: string; minute?: number | null } | null;
   odds: {
     home: number | null;
     away: number | null;
