@@ -55,9 +55,8 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const sportKey = url.searchParams.get('sport') || 'upcoming';
 
-    // Date window: yesterday (catch ongoing live across UTC) → +14d upcoming
+    // Date window: today onward → +14d. Skip past games entirely.
     const start = new Date();
-    start.setDate(start.getDate() - 1);
     const end = new Date();
     end.setDate(end.getDate() + 14);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
