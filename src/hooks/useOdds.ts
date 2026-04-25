@@ -9,14 +9,19 @@ export interface NormalizedMatch {
   team1: string;
   team2: string;
   time: string;
+  localTime: string;
+  providerTime: string;
+  providerTimezone: string;
   isLive: boolean;
   odds: { home: number; draw: number; away: number };
   totalMarkets: number;
   commenceTime: string;
   gameState?: {
-    home_score?: number;
-    away_score?: number;
+    home_score?: number | null;
+    away_score?: number | null;
     period?: string;
+    status?: string;
+    minute?: number | null;
     clock?: string;
   } | null;
 }
@@ -26,13 +31,29 @@ const FALLBACK_NOTICE = "Live odds are temporarily unavailable — showing demo 
 function getTimeUntil(commence: Date): string {
   const now = new Date();
   const diff = commence.getTime() - now.getTime();
-  if (diff <= 0) return "LIVE";
+  if (diff <= 0) return "Starting";
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const mins = Math.floor((diff / (1000 * 60)) % 60);
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
+}
+
+function formatLocal(d: Date): string {
+  try {
+    return d.toLocaleString(undefined, {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return d.toISOString(); }
+}
+
+function formatProvider(d: Date, tz: string): string {
+  try {
+    return d.toLocaleString("en-GB", {
+      timeZone: tz, month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    }) + ` ${tz}`;
+  } catch { return `${d.toISOString()} ${tz}`; }
 }
 
 interface SharpEvent {
@@ -42,10 +63,12 @@ interface SharpEvent {
   home_team: string;
   away_team: string;
   start_time: string;
+  start_time_provider?: string;
+  provider_timezone?: string;
   is_live: boolean;
   book_count: number;
   markets: string[];
-  game_state?: { home_score?: number; away_score?: number; period?: string; clock?: string } | null;
+  game_state?: { home_score?: number | null; away_score?: number | null; period?: string; clock?: string; status?: string; minute?: number | null } | null;
   odds: {
     home: number | null;
     away: number | null;
@@ -59,7 +82,11 @@ function normalizeSharpEvents(events: SharpEvent[]): NormalizedMatch[] {
     .map((ev) => {
       const commence = new Date(ev.start_time);
       const isLive = ev.is_live;
-      const timeStr = isLive ? "LIVE" : getTimeUntil(commence);
+      const minute = ev.game_state?.minute;
+      const timeStr = isLive
+        ? (typeof minute === "number" ? `${minute}'` : "LIVE")
+        : getTimeUntil(commence);
+      const tz = ev.provider_timezone || "UTC";
 
       return {
         matchId: ev.id,
@@ -68,6 +95,9 @@ function normalizeSharpEvents(events: SharpEvent[]): NormalizedMatch[] {
         team1: ev.home_team,
         team2: ev.away_team,
         time: timeStr,
+        localTime: formatLocal(commence),
+        providerTime: formatProvider(commence, tz),
+        providerTimezone: tz,
         isLive,
         odds: {
           home: ev.odds?.home || 1.5,
@@ -114,6 +144,9 @@ function getFallbackMatches(sportKey: string): NormalizedMatch[] {
         team1: match.team1,
         team2: match.team2,
         time: match.isLive ? "LIVE" : getTimeUntil(new Date(commenceTime)),
+        localTime: formatLocal(new Date(commenceTime)),
+        providerTime: formatProvider(new Date(commenceTime), "UTC"),
+        providerTimezone: "UTC",
         isLive: match.isLive,
         odds: match.odds,
         totalMarkets: match.totalMarkets,
@@ -169,6 +202,9 @@ export function useOdds(sportKey: string = "upcoming") {
           team1: g.home_team,
           team2: g.away_team,
           time: isLive ? `${g.current_minute}'` : getTimeUntil(commence),
+          localTime: formatLocal(commence),
+          providerTime: formatProvider(commence, "UTC"),
+          providerTimezone: "UTC",
           isLive,
           odds: { home: 1.5, draw: 3.5, away: 4.0 },
           totalMarkets: 10,
@@ -239,18 +275,26 @@ export function useOdds(sportKey: string = "upcoming") {
     }
   }, [applyFallback, sportKey]);
 
+  const hasLive = matches.some((m) => m.isLive);
+
   useEffect(() => {
     void fetchOdds();
+  }, [fetchOdds]);
 
+  useEffect(() => {
+    // Poll every 15s when a match is live (per SportMonks), otherwise every 30s.
+    const pollMs = hasLive ? 15000 : 30000;
     const interval = setInterval(() => {
       void fetchOdds(true);
-    }, 30000);
+    }, pollMs);
 
     const timeInterval = setInterval(() => {
       setMatches((prev) =>
         prev.map((m) => ({
           ...m,
-          time: m.isLive ? "LIVE" : getTimeUntil(new Date(m.commenceTime)),
+          time: m.isLive
+            ? (typeof m.gameState?.minute === "number" ? `${m.gameState.minute}'` : "LIVE")
+            : getTimeUntil(new Date(m.commenceTime)),
         }))
       );
     }, 10000);
@@ -259,7 +303,7 @@ export function useOdds(sportKey: string = "upcoming") {
       clearInterval(interval);
       clearInterval(timeInterval);
     };
-  }, [fetchOdds]);
+  }, [fetchOdds, hasLive]);
 
   return { matches, loading, error, notice, lastUpdated, refetch: () => fetchOdds(true) };
 }

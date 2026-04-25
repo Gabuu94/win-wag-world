@@ -55,10 +55,13 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const sportKey = url.searchParams.get('sport') || 'upcoming';
 
-    // Date window: today + next 7 days
-    const today = new Date();
+    // Window for upcoming fixtures: tomorrow → +14d (today's games are usually
+    // already finished by the time most users browse). We additionally fetch
+    // currently in-play fixtures separately so live matches always appear.
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     const end = new Date();
-    end.setDate(end.getDate() + 7);
+    end.setUTCDate(end.getUTCDate() + 14);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
     const leagueIds = LEAGUE_MAP[sportKey] ?? [];
@@ -70,8 +73,11 @@ Deno.serve(async (req) => {
       params.set('filters', `fixtureLeagues:${leagueIds.join(',')}`);
     }
 
-    const endpoint = `${SM_BASE}/fixtures/between/${fmt(today)}/${fmt(end)}?${params}`;
-    const resp = await fetch(endpoint);
+    const upcomingUrl = `${SM_BASE}/fixtures/between/${fmt(tomorrow)}/${fmt(end)}?${params}`;
+    const inplayUrl = `${SM_BASE}/livescores/inplay?api_token=${TOKEN}&include=participants;league;scores;state`;
+
+    const [upResp, inResp] = await Promise.all([fetch(upcomingUrl), fetch(inplayUrl)]);
+    const resp = upResp;
 
     if (!resp.ok) {
       const text = await resp.text();
@@ -86,14 +92,42 @@ Deno.serve(async (req) => {
     }
 
     const result = await resp.json();
-    const fixtures = result.data || [];
+    const upcomingFixtures = result.data || [];
+    let inplayFixtures: any[] = [];
+    try {
+      if (inResp.ok) {
+        const inJson = await inResp.json();
+        inplayFixtures = inJson.data || [];
+      }
+    } catch (e) {
+      console.error('inplay parse failed', e);
+    }
+    // Merge: in-play first (so live shows), then upcoming. Dedupe by id.
+    const seen = new Set<number>();
+    const fixtures = [...inplayFixtures, ...upcomingFixtures].filter((f: any) => {
+      if (seen.has(f.id)) return false;
+      seen.add(f.id); return true;
+    });
+    console.log(`SportMonks returned ${upcomingFixtures.length} upcoming + ${inplayFixtures.length} in-play (window ${fmt(tomorrow)} → ${fmt(end)})`);
 
     const combined = fixtures.map((f: any) => {
       const participants = f.participants || [];
       const home = participants.find((p: any) => p.meta?.location === 'home') || participants[0] || {};
       const away = participants.find((p: any) => p.meta?.location === 'away') || participants[1] || {};
       const stateCode = f.state?.state || f.state?.short_name || '';
-      const isLive = ['INPLAY_1ST_HALF', 'INPLAY_2ND_HALF', 'HT', 'INPLAY_ET', 'INPLAY_ET_2ND_HALF', 'PEN_LIVE', 'BREAK', 'EXTRA_TIME'].includes(stateCode);
+      const stateName = (f.state?.name || '').toLowerCase();
+      const liveStates = ['INPLAY_1ST_HALF', 'INPLAY_2ND_HALF', 'HT', 'INPLAY_ET', 'INPLAY_ET_2ND_HALF', 'PEN_LIVE', 'BREAK', 'EXTRA_TIME'];
+      const finishedStates = ['FT', 'AET', 'FT_PEN', 'CANC', 'POSTP', 'ABAN', 'AWARDED', 'WO'];
+      const isLive = liveStates.includes(stateCode);
+      const isFinished = finishedStates.includes(stateCode) || stateName.includes('full time') || stateName.includes('finished') || stateName.includes('ended');
+
+      // SportMonks returns naive UTC datetimes ("YYYY-MM-DD HH:mm:ss"). Make ISO-8601 UTC.
+      const rawStart: string = f.starting_at || '';
+      const startIso = rawStart ? rawStart.replace(' ', 'T') + 'Z' : '';
+
+      const homeScore = f.scores?.find?.((s: any) => s.description === 'CURRENT' && s.score?.participant === 'home')?.score?.goals
+        ?? f.scores?.find?.((s: any) => s.description === 'CURRENT')?.score?.goals;
+      const awayScore = f.scores?.find?.((s: any) => s.description === 'CURRENT' && s.score?.participant === 'away')?.score?.goals;
 
       const odds = seededOdds(`${f.id}`);
 
@@ -103,19 +137,28 @@ Deno.serve(async (req) => {
         league: f.league?.name || 'Football',
         home_team: home.name || 'Home',
         away_team: away.name || 'Away',
-        start_time: f.starting_at || '',
+        start_time: startIso,
+        start_time_provider: rawStart,
+        provider_timezone: 'UTC',
         is_live: isLive,
+        is_finished: isFinished,
         book_count: 1,
         markets: [],
-        game_state: f.state ? { status: f.state.name, minute: f.state?.minute ?? null } : null,
+        game_state: f.state ? {
+          status: f.state.name,
+          minute: f.state?.minute ?? null,
+          home_score: typeof homeScore === 'number' ? homeScore : null,
+          away_score: typeof awayScore === 'number' ? awayScore : null,
+        } : null,
         odds,
       };
     });
+    const filtered = combined.filter((m: any) => !m.is_finished);
 
     return jsonResponse({
       success: true,
-      data: combined,
-      meta: { provider: 'sportmonks', count: combined.length },
+      data: filtered,
+      meta: { provider: 'sportmonks', count: filtered.length, total: combined.length },
     });
   } catch (error) {
     console.error('Error fetching odds:', error);
