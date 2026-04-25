@@ -82,7 +82,11 @@ function normalizeSharpEvents(events: SharpEvent[]): NormalizedMatch[] {
     .map((ev) => {
       const commence = new Date(ev.start_time);
       const isLive = ev.is_live;
-      const timeStr = isLive ? "LIVE" : getTimeUntil(commence);
+      const minute = ev.game_state?.minute;
+      const timeStr = isLive
+        ? (typeof minute === "number" ? `${minute}'` : "LIVE")
+        : getTimeUntil(commence);
+      const tz = ev.provider_timezone || "UTC";
 
       return {
         matchId: ev.id,
@@ -91,6 +95,9 @@ function normalizeSharpEvents(events: SharpEvent[]): NormalizedMatch[] {
         team1: ev.home_team,
         team2: ev.away_team,
         time: timeStr,
+        localTime: formatLocal(commence),
+        providerTime: formatProvider(commence, tz),
+        providerTimezone: tz,
         isLive,
         odds: {
           home: ev.odds?.home || 1.5,
