@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       params.set('filters', `fixtureLeagues:${leagueIds.join(',')}`);
     }
 
-    const endpoint = `${SM_BASE}/fixtures/between/${fmt(today)}/${fmt(end)}?${params}`;
+    const endpoint = `${SM_BASE}/fixtures/between/${fmt(start)}/${fmt(end)}?${params}`;
     const resp = await fetch(endpoint);
 
     if (!resp.ok) {
