@@ -55,10 +55,13 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const sportKey = url.searchParams.get('sport') || 'upcoming';
 
-    // Date window: today onward → +14d. Skip past games entirely.
-    const start = new Date();
+    // Window for upcoming fixtures: tomorrow → +14d (today's games are usually
+    // already finished by the time most users browse). We additionally fetch
+    // currently in-play fixtures separately so live matches always appear.
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     const end = new Date();
-    end.setDate(end.getDate() + 14);
+    end.setUTCDate(end.getUTCDate() + 14);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
     const leagueIds = LEAGUE_MAP[sportKey] ?? [];
@@ -70,8 +73,11 @@ Deno.serve(async (req) => {
       params.set('filters', `fixtureLeagues:${leagueIds.join(',')}`);
     }
 
-    const endpoint = `${SM_BASE}/fixtures/between/${fmt(start)}/${fmt(end)}?${params}`;
-    const resp = await fetch(endpoint);
+    const upcomingUrl = `${SM_BASE}/fixtures/between/${fmt(tomorrow)}/${fmt(end)}?${params}`;
+    const inplayUrl = `${SM_BASE}/livescores/inplay?api_token=${TOKEN}&include=participants;league;scores;state`;
+
+    const [upResp, inResp] = await Promise.all([fetch(upcomingUrl), fetch(inplayUrl)]);
+    const resp = upResp;
 
     if (!resp.ok) {
       const text = await resp.text();
