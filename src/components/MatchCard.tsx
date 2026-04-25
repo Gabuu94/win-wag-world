@@ -44,9 +44,15 @@ const MatchCard = ({ match }: MatchCardProps) => {
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium">{team1}</span>
+            {isLive && typeof homeScore === "number" && (
+              <span className="text-sm font-bold text-live tabular-nums">{homeScore}</span>
+            )}
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{team2}</span>
+            {isLive && typeof awayScore === "number" && (
+              <span className="text-sm font-bold text-live tabular-nums">{awayScore}</span>
+            )}
           </div>
         </div>
       </div>
