@@ -55,10 +55,10 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const sportKey = url.searchParams.get('sport') || 'upcoming';
 
-    // Date window: today + next 7 days
+    // Date window: today (to catch live games) + next 14 days for upcoming
     const today = new Date();
     const end = new Date();
-    end.setDate(end.getDate() + 7);
+    end.setDate(end.getDate() + 14);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
     const leagueIds = LEAGUE_MAP[sportKey] ?? [];
