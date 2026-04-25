@@ -1,5 +1,4 @@
 import MatchCard from "./MatchCard";
-import HeroBanner from "./HeroBanner";
 import { useOdds } from "@/hooks/useOdds";
 import { Loader2, RefreshCw } from "lucide-react";
 
@@ -23,8 +22,6 @@ const LiveMatchesFeed = ({ sportKey = "upcoming", searchQuery = "" }: LiveMatche
 
   return (
     <main className="flex-1 overflow-y-auto p-4 h-[calc(100vh-8rem)]">
-      <HeroBanner />
-
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs text-muted-foreground">
           {lastUpdated && `Updated ${lastUpdated.toLocaleTimeString()}`}
