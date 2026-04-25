@@ -139,8 +139,8 @@ Deno.serve(async (req) => {
 
     return jsonResponse({
       success: true,
-      data: combined,
-      meta: { provider: 'sportmonks', count: combined.length },
+      data: filtered,
+      meta: { provider: 'sportmonks', count: filtered.length, total: combined.length },
     });
   } catch (error) {
     console.error('Error fetching odds:', error);
