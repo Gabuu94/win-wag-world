@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
 
     const result = await resp.json();
     const fixtures = result.data || [];
+    console.log(`SportMonks returned ${fixtures.length} fixtures (window ${fmt(start)} → ${fmt(end)})`);
 
     const combined = fixtures.map((f: any) => {
       const participants = f.participants || [];
