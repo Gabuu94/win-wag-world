@@ -9,14 +9,19 @@ export interface NormalizedMatch {
   team1: string;
   team2: string;
   time: string;
+  localTime: string;
+  providerTime: string;
+  providerTimezone: string;
   isLive: boolean;
   odds: { home: number; draw: number; away: number };
   totalMarkets: number;
   commenceTime: string;
   gameState?: {
-    home_score?: number;
-    away_score?: number;
+    home_score?: number | null;
+    away_score?: number | null;
     period?: string;
+    status?: string;
+    minute?: number | null;
     clock?: string;
   } | null;
 }
@@ -26,13 +31,29 @@ const FALLBACK_NOTICE = "Live odds are temporarily unavailable — showing demo 
 function getTimeUntil(commence: Date): string {
   const now = new Date();
   const diff = commence.getTime() - now.getTime();
-  if (diff <= 0) return "LIVE";
+  if (diff <= 0) return "Starting";
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const mins = Math.floor((diff / (1000 * 60)) % 60);
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
+}
+
+function formatLocal(d: Date): string {
+  try {
+    return d.toLocaleString(undefined, {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return d.toISOString(); }
+}
+
+function formatProvider(d: Date, tz: string): string {
+  try {
+    return d.toLocaleString("en-GB", {
+      timeZone: tz, month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    }) + ` ${tz}`;
+  } catch { return `${d.toISOString()} ${tz}`; }
 }
 
 interface SharpEvent {
