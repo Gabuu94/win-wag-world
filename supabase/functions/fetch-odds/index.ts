@@ -132,7 +132,10 @@ Deno.serve(async (req) => {
         } : null,
         odds,
       };
-    }).filter((m: any) => !m.is_finished);
+    });
+    const finishedCount = combined.filter((m: any) => m.is_finished).length;
+    console.log(`After mapping: ${combined.length} total, ${finishedCount} finished, sample status: ${combined[0]?.game_state?.status}`);
+    const filtered = combined.filter((m: any) => !m.is_finished);
 
     return jsonResponse({
       success: true,
