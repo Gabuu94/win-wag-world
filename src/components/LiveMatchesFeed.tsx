@@ -1,5 +1,4 @@
 import MatchCard from "./MatchCard";
-import HeroBanner from "./HeroBanner";
 import { useOdds } from "@/hooks/useOdds";
 import { Loader2, RefreshCw } from "lucide-react";
 
