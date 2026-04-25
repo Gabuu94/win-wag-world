@@ -275,18 +275,26 @@ export function useOdds(sportKey: string = "upcoming") {
     }
   }, [applyFallback, sportKey]);
 
+  const hasLive = matches.some((m) => m.isLive);
+
   useEffect(() => {
     void fetchOdds();
+  }, [fetchOdds]);
 
+  useEffect(() => {
+    // Poll every 15s when a match is live (per SportMonks), otherwise every 30s.
+    const pollMs = hasLive ? 15000 : 30000;
     const interval = setInterval(() => {
       void fetchOdds(true);
-    }, 30000);
+    }, pollMs);
 
     const timeInterval = setInterval(() => {
       setMatches((prev) =>
         prev.map((m) => ({
           ...m,
-          time: m.isLive ? "LIVE" : getTimeUntil(new Date(m.commenceTime)),
+          time: m.isLive
+            ? (typeof m.gameState?.minute === "number" ? `${m.gameState.minute}'` : "LIVE")
+            : getTimeUntil(new Date(m.commenceTime)),
         }))
       );
     }, 10000);
@@ -295,7 +303,7 @@ export function useOdds(sportKey: string = "upcoming") {
       clearInterval(interval);
       clearInterval(timeInterval);
     };
-  }, [fetchOdds]);
+  }, [fetchOdds, hasLive]);
 
   return { matches, loading, error, notice, lastUpdated, refetch: () => fetchOdds(true) };
 }
