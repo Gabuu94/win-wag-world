@@ -88,7 +88,7 @@ const Leaderboard = () => {
                 {entry.multiplier}x
               </span>
             )}
-            <span className="text-xs font-bold text-primary">${entry.amount.toLocaleString()}</span>
+            <span className="text-xs font-bold text-primary">{formatMoney(entry.amount, profile)}</span>
           </div>
         ))}
       </div>
