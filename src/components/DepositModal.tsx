@@ -160,36 +160,48 @@ const DepositModal = () => {
   // Track the current pending transaction so we can listen for confirmation
   const pendingTxRef = useRef<string | null>(null);
 
-  // Realtime listener for transaction status changes (success/fail signals)
+  // Realtime listener for transaction status changes (success/fail signals).
+  // Listens to UPDATE (new flow: callback updates the pending row) AND INSERT
+  // (legacy flow: callback inserts a new completed row).
   useEffect(() => {
     if (!user || !showDepositModal) return;
+
+    const handleRow = (row: any) => {
+      if (!row || row.type !== "deposit") return;
+      // Accept any deposit row matching our pending one, OR any completed/failed
+      // deposit row for this user while we are waiting (covers legacy INSERT path).
+      const isWaiting = phase.kind === "stk-sent" || phase.kind === "crypto-pending";
+      if (!isWaiting) return;
+
+      if (row.status === "completed") {
+        const method = row.method === "mpesa" ? "mpesa" : "crypto";
+        setPhase({ kind: "success", amount: Number(row.amount) || 0, method });
+        refreshProfile();
+        pendingTxRef.current = null;
+      } else if (row.status === "failed" || row.status === "cancelled") {
+        const method = row.method === "mpesa" ? "mpesa" : "crypto";
+        setPhase({ kind: "failed", method, reason: row.metadata?.reason });
+        pendingTxRef.current = null;
+      }
+    };
+
     const channel = supabase
       .channel(`deposit-tx-${user.id}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          const row: any = payload.new;
-          if (!row || row.type !== "deposit") return;
-          if (pendingTxRef.current && row.id !== pendingTxRef.current) return;
-
-          if (row.status === "completed") {
-            const method = row.method === "mpesa" ? "mpesa" : "crypto";
-            setPhase({ kind: "success", amount: Number(row.amount) || 0, method });
-            refreshProfile();
-            pendingTxRef.current = null;
-          } else if (row.status === "failed" || row.status === "cancelled") {
-            const method = row.method === "mpesa" ? "mpesa" : "crypto";
-            setPhase({ kind: "failed", method, reason: row.metadata?.reason });
-            pendingTxRef.current = null;
-          }
-        }
+        (payload) => handleRow(payload.new),
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
+        (payload) => handleRow(payload.new),
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, showDepositModal, refreshProfile]);
+  }, [user, showDepositModal, phase.kind, refreshProfile]);
 
   // Countdown for the STK push wait screen
   useEffect(() => {
@@ -199,7 +211,6 @@ const DepositModal = () => {
       setStkRemaining((s) => {
         if (s <= 1) {
           clearInterval(interval);
-          // Timed out — gently surface a message but keep waiting in case of late callback
           return 0;
         }
         return s - 1;
@@ -208,14 +219,48 @@ const DepositModal = () => {
     return () => clearInterval(interval);
   }, [phase.kind]);
 
-  // Periodic profile refresh while waiting (covers cases where realtime is delayed)
+  // Polling fallback: while waiting, every 3s check the latest deposit row
+  // directly. Catches realtime delays/missed events.
   useEffect(() => {
+    if (!user) return;
     if (phase.kind !== "stk-sent" && phase.kind !== "crypto-pending") return;
-    const interval = setInterval(() => {
-      refreshProfile();
-    }, 5000);
+
+    const poll = async () => {
+      // Look for the most recent completed/failed deposit since we started waiting
+      const { data } = await supabase
+        .from("transactions")
+        .select("id, status, amount, method, type, metadata, created_at")
+        .eq("user_id", user.id)
+        .eq("type", "deposit")
+        .in("status", ["completed", "failed", "cancelled"])
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const row = data?.[0];
+      if (!row) return;
+
+      // Only act on rows newer than ~5 minutes ago
+      const ageMs = Date.now() - new Date(row.created_at).getTime();
+      if (ageMs > 5 * 60 * 1000) return;
+
+      if (row.status === "completed") {
+        const method = row.method === "mpesa" ? "mpesa" : "crypto";
+        setPhase({ kind: "success", amount: Number(row.amount) || 0, method });
+        refreshProfile();
+        pendingTxRef.current = null;
+      } else if (row.status === "failed" || row.status === "cancelled") {
+        const method = row.method === "mpesa" ? "mpesa" : "crypto";
+        const meta = (row.metadata as any) ?? {};
+        setPhase({ kind: "failed", method, reason: meta.reason });
+        pendingTxRef.current = null;
+      }
+    };
+
+    poll(); // immediate check on entering the waiting state
+    const interval = setInterval(poll, 3000);
     return () => clearInterval(interval);
-  }, [phase.kind, refreshProfile]);
+  }, [phase.kind, user, refreshProfile]);
+
 
   if (!showDepositModal) return null;
 
