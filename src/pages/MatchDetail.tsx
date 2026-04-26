@@ -58,7 +58,14 @@ const MatchDetail = () => {
     const fetchAdminMarkets = async () => {
       setMarketsLoading(true);
       const { data } = await supabase.from("admin_game_markets").select("*").eq("game_id", adminGameId).eq("is_active", true);
-      setAdminMarkets((data as unknown as AdminMarket[]) || []);
+      const list = (data as unknown as AdminMarket[]) || [];
+      setAdminMarkets(list);
+      // Auto-expand every custom market so users immediately see options like Correct Score, "1/2", etc.
+      setExpandedMarkets((prev) => {
+        const next = new Set(prev);
+        list.forEach((m) => next.add(m.market_type));
+        return next;
+      });
       // Get live game data
       const { data: game } = await supabase.from("admin_games").select("*").eq("id", adminGameId).single();
       if (game) setLiveGame(game);
