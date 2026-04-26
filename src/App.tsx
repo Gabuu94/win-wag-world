@@ -48,6 +48,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/match/:id" element={<MatchDetail />} />
+              <Route path="/g/:code" element={<GameShare />} />
               <Route path="/history" element={<BetHistory />} />
               <Route path="/transactions" element={<TransactionHistory />} />
               <Route path="/withdraw" element={<Withdraw />} />
