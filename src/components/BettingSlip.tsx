@@ -230,25 +230,12 @@ const BettingSlipContent = () => {
       {/* Load Code */}
       <div className="px-3 pt-2">
         <button
-          onClick={() => setShowCodeInput(!showCodeInput)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition w-full"
+          onClick={openLoadDialog}
+          className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition w-full bg-secondary/50 hover:bg-secondary rounded-md py-2 border border-border"
         >
           <ClipboardPaste className="w-3.5 h-3.5" />
           <span>Load betslip code</span>
         </button>
-        {showCodeInput && (
-          <div className="flex gap-1.5 mt-1.5">
-            <input
-              value={codeInput}
-              onChange={(e) => setCodeInput(e.target.value)}
-              placeholder="Paste code here..."
-              className="flex-1 bg-secondary text-foreground text-xs px-2 py-1.5 rounded-md outline-none placeholder:text-muted-foreground"
-            />
-            <button onClick={handleLoadCode} className="bg-primary text-primary-foreground text-xs px-2 py-1.5 rounded-md font-medium">
-              Load
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Selections */}
