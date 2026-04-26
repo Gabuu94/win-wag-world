@@ -131,36 +131,25 @@ const AuthModal = () => {
                   ))}
                 </select>
               </div>
-
-              {/* Phone Number */}
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <div className="flex">
-                  <span className="bg-secondary border border-border border-r-0 rounded-l-md px-3 py-3 text-sm text-muted-foreground flex items-center min-w-[70px]">
-                    {selectedCountry.dial}
-                  </span>
-                  <input
-                    type="tel"
-                    placeholder="Phone number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                    className="w-full bg-secondary border border-border rounded-r-md px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-                  />
-                </div>
-              </div>
             </>
           )}
 
+          {/* Phone Number — used as the login identifier */}
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-              required
-            />
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="flex">
+              <span className="bg-secondary border border-border border-r-0 rounded-l-md px-3 py-3 text-sm text-muted-foreground flex items-center min-w-[70px]">
+                {selectedCountry.dial}
+              </span>
+              <input
+                type="tel"
+                placeholder="Phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                className="w-full bg-secondary border border-border rounded-r-md px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
+                required
+              />
+            </div>
           </div>
 
           <div className="relative">
