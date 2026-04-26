@@ -18,7 +18,7 @@ const generateShortCode = () => {
 
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
-  const { isLoggedIn, profile, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
+  const { isLoggedIn, profile, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [codeInput, setCodeInput] = useState("");
 
