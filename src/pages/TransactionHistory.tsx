@@ -102,7 +102,7 @@ const TransactionHistory = () => {
               </div>
               <div className="text-right">
                 <p className={`font-bold text-sm ${tx.type === "deposit" ? "text-primary" : "text-accent"}`}>
-                  {tx.type === "deposit" ? "+" : "-"}${tx.amount.toFixed(2)}
+                  {tx.type === "deposit" ? "+" : "-"}{formatMoney(tx.amount, profile)}
                 </p>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded capitalize ${statusColor(tx.status)}`}>
                   {tx.status}
