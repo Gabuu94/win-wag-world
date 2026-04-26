@@ -588,6 +588,10 @@ const DepositModal = () => {
                     : "The crypto payment didn't go through.")}
                 </p>
               </div>
+
+              {/* Failed-state progress */}
+              <DepositProgress phase={phase} method={phase.method} />
+
               <button onClick={resetToForm} className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition">
                 Try Again
               </button>
