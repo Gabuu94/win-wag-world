@@ -81,7 +81,7 @@ const NotificationBell = () => {
     <div className="relative" ref={ref}>
       <button
         onClick={() => { setOpen(!open); if (!open) markAllRead(); }}
-        className="hidden sm:flex items-center text-muted-foreground hover:text-foreground transition relative"
+        className="flex items-center text-muted-foreground hover:text-foreground transition relative"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
