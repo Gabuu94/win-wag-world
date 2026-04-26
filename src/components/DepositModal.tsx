@@ -17,8 +17,8 @@ const cryptoCurrencies = [
 const presetAmountsKES = [100, 250, 500, 1000, 2500, 5000];
 const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
 
-const tabs: { key: PaymentTab; label: string; icon: any; active: boolean }[] = [
-  { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: true },
+const buildTabs = (mpesaActive: boolean): { key: PaymentTab; label: string; icon: any; active: boolean }[] => [
+  { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: mpesaActive },
   { key: "crypto", label: "Crypto", icon: Bitcoin, active: true },
   { key: "airtel", label: "Airtel", icon: Smartphone, active: false },
   { key: "card", label: "Card", icon: CreditCard, active: false },
