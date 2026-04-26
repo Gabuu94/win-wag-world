@@ -131,7 +131,8 @@ const DepositProgress = forwardRef<HTMLDivElement, {
       </div>
     </div>
   );
-};
+});
+DepositProgress.displayName = "DepositProgress";
 
 const DepositModal = () => {
   const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
