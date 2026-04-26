@@ -602,6 +602,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_finish_admin_games: { Args: never; Returns: undefined }
       get_user_vip_tier: {
         Args: { p_user_id: string }
         Returns: {
