@@ -98,7 +98,7 @@ const Withdraw = () => {
         {/* Balance */}
         <div className="bg-card border border-border rounded-lg p-4 mb-4 text-center">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Available Balance</p>
-          <p className="text-2xl font-bold text-primary mt-1">${profile?.balance.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-primary mt-1">{formatMoney(profile?.balance ?? 0, profile)}</p>
         </div>
 
         {/* Tabs */}
