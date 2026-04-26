@@ -72,7 +72,7 @@ const NotificationBell = () => {
   };
 
   if (!isLoggedIn) return (
-    <button className="hidden sm:flex items-center text-muted-foreground hover:text-foreground transition">
+    <button className="flex items-center text-muted-foreground hover:text-foreground transition">
       <Bell className="w-5 h-5" />
     </button>
   );
