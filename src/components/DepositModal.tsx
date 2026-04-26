@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,14 +19,6 @@ const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
 
 const STK_TIMEOUT_SECONDS = 90;
 
-const buildTabs = (mpesaActive: boolean): { key: PaymentTab; label: string; icon: any; active: boolean }[] => [
-  { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: mpesaActive },
-  { key: "crypto", label: "Crypto", icon: Bitcoin, active: true },
-  { key: "airtel", label: "Airtel", icon: Smartphone, active: false },
-  { key: "card", label: "Card", icon: CreditCard, active: false },
-  { key: "bank", label: "Bank", icon: Landmark, active: false },
-  { key: "paypal", label: "PayPal", icon: Wallet, active: false },
-];
 
 type DepositPhase =
   | { kind: "form" }
@@ -134,15 +126,61 @@ const DepositProgress = forwardRef<HTMLDivElement, {
 });
 DepositProgress.displayName = "DepositProgress";
 
+// Reference-style payment method card (logo on white tile + label band beneath)
+const MethodCard = ({
+  label,
+  icon,
+  brandColor,
+  badge,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  brandColor?: string;
+  badge?: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onClick}
+    className={`relative group flex flex-col rounded-md overflow-hidden border transition ${
+      disabled
+        ? "border-border opacity-50 cursor-not-allowed"
+        : "border-border hover:border-primary hover:shadow-[0_0_0_1px_hsl(var(--primary))] cursor-pointer"
+    }`}
+  >
+    {badge && (
+      <span className="absolute top-1 right-1 z-10 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+        {badge}
+      </span>
+    )}
+    <div className="bg-white flex-1 flex items-center justify-center py-5">
+      <div className={brandColor}>{icon}</div>
+    </div>
+    <div className="bg-accent/80 text-accent-foreground py-2 text-center text-xs font-bold tracking-wide">
+      {label}
+    </div>
+    {disabled && (
+      <span className="absolute bottom-9 right-1 text-[8px] uppercase tracking-wider bg-muted text-muted-foreground px-1 rounded">
+        Soon
+      </span>
+    )}
+  </button>
+);
+
 const DepositModal = () => {
   const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
   const ke = isKenyan(profile);
-  const [tab, setTab] = useState<PaymentTab>(ke ? "mpesa" : "crypto");
+  // null = method picker screen, otherwise show that method's form
+  const [tab, setTab] = useState<PaymentTab | null>(null);
 
   // If profile loads/changes (e.g. user switches country), and they aren't Kenyan,
-  // force away from the M-Pesa tab to crypto.
+  // force away from the M-Pesa tab.
   useEffect(() => {
-    if (!ke && tab === "mpesa") setTab("crypto");
+    if (!ke && tab === "mpesa") setTab(null);
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -266,6 +304,7 @@ const DepositModal = () => {
 
   const resetToForm = () => {
     setPhase({ kind: "form" });
+    setTab(null);
     pendingTxRef.current = null;
   };
 
@@ -382,34 +421,111 @@ const DepositModal = () => {
           </button>
         </div>
 
-        {/* Tabs only visible in form phase */}
-        {!isOverlayPhase && (
-          <div className="grid grid-cols-3 sm:grid-cols-6 border-b border-border overflow-x-auto">
-            {buildTabs(ke).map((t) => (
-              <button
-                key={t.key}
-                onClick={() => t.active ? setTab(t.key) : null}
-                disabled={!t.active}
-                className={`flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-wider transition relative ${
-                  tab === t.key && t.active
-                    ? "text-primary border-b-2 border-primary bg-primary/5"
-                    : t.active
-                    ? "text-muted-foreground hover:text-foreground"
-                    : "text-muted-foreground/40 cursor-not-allowed"
-                }`}
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-                {!t.active && (
-                  <span className="absolute top-1 right-1 text-[7px] bg-muted text-muted-foreground px-1 rounded">Soon</span>
-                )}
-              </button>
-            ))}
-          </div>
+        {/* Back button to method picker (only when a method is chosen and still in form phase) */}
+        {!isOverlayPhase && tab !== null && (
+          <button
+            onClick={() => setTab(null)}
+            className="flex items-center gap-1.5 px-4 pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Payment methods
+          </button>
         )}
 
         <div className="p-6 space-y-5">
-          {/* ============================== FORM PHASE ============================== */}
+          {/* ============================== METHOD PICKER ============================== */}
+          {phase.kind === "form" && tab === null && (
+            <div className="space-y-5 animate-in fade-in duration-200">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Account</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-base font-bold text-foreground">
+                    {profile?.username || "Guest"}
+                  </span>
+                  {profile && (
+                    <span className="text-xs text-muted-foreground">· {formatMoney(profile.balance, profile)}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="inline-block bg-accent/15 text-accent border border-accent/30 px-3 py-1.5 rounded-md">
+                <span className="text-xs font-bold uppercase tracking-wider">Types of payment systems</span>
+              </div>
+
+              {/* Recommended */}
+              <div className="bg-secondary/40 border border-border rounded-lg p-3">
+                <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-3">Recommended</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {ke && (
+                    <MethodCard
+                      label="M-Pesa"
+                      icon={<Smartphone className="w-7 h-7 text-primary" />}
+                      brandColor="text-primary"
+                      onClick={() => setTab("mpesa")}
+                    />
+                  )}
+                  <MethodCard
+                    label="Crypto"
+                    icon={<Bitcoin className="w-7 h-7 text-accent" />}
+                    brandColor="text-accent"
+                    badge="+5%"
+                    onClick={() => setTab("crypto")}
+                  />
+                  {!ke && (
+                    <MethodCard
+                      label="Card"
+                      icon={<CreditCard className="w-7 h-7 text-muted-foreground" />}
+                      brandColor="text-muted-foreground"
+                      disabled
+                      onClick={() => {}}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Other methods */}
+              <div className="bg-secondary/40 border border-border rounded-lg p-3">
+                <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-3">
+                  {ke ? "Mobile Payments" : "Other Methods"}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <MethodCard
+                    label="Airtel"
+                    icon={<Smartphone className="w-7 h-7 text-destructive" />}
+                    brandColor="text-destructive"
+                    disabled
+                    onClick={() => {}}
+                  />
+                  <MethodCard
+                    label="Bank"
+                    icon={<Landmark className="w-7 h-7 text-muted-foreground" />}
+                    brandColor="text-muted-foreground"
+                    disabled
+                    onClick={() => {}}
+                  />
+                  <MethodCard
+                    label="Card"
+                    icon={<CreditCard className="w-7 h-7 text-muted-foreground" />}
+                    brandColor="text-muted-foreground"
+                    disabled
+                    onClick={() => {}}
+                  />
+                  <MethodCard
+                    label="PayPal"
+                    icon={<Wallet className="w-7 h-7 text-muted-foreground" />}
+                    brandColor="text-muted-foreground"
+                    disabled
+                    onClick={() => {}}
+                  />
+                </div>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground text-center">
+                Choose a payment method to continue. Deposits are processed securely.
+              </p>
+            </div>
+          )}
+
+          {/* ============================== MPESA FORM ============================== */}
           {phase.kind === "form" && tab === "mpesa" && (
             <>
               <div>
