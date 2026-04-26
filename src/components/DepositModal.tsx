@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { isKenyan } from "@/lib/currency";
 
 type PaymentTab = "mpesa" | "crypto" | "card" | "bank" | "airtel" | "paypal";
 
