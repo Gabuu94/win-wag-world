@@ -142,8 +142,10 @@ const MatchDetail = () => {
   const matchLabel = `${match.team1} vs ${match.team2}`;
   const hasDrawOdds = match.odds.draw > 0;
 
-  // Live score display for admin games
-  const showLiveScore = isAdminGame && liveGame && (liveGame.status === "live" || liveGame.status === "finished");
+  // Only reveal the score after the game is finished. While live, the result is hidden
+  // so users can't see the outcome the admin has pre-set.
+  const showLiveScore = isAdminGame && liveGame && liveGame.status === "finished";
+  const showLiveBadge = isAdminGame && liveGame && liveGame.status === "live";
   const periodLabels: Record<string, string> = {
     not_started: "Not Started",
     first_half: "1st Half",
