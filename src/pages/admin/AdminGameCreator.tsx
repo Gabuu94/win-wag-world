@@ -638,6 +638,36 @@ const AdminGameCreator = () => {
                   <h3 className="font-bold">{g.home_team} vs {g.away_team}</h3>
                   <p className="text-xs text-muted-foreground">{new Date(g.start_time).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })} (EAT)</p>
                   {g.result_home !== null && <p className="text-sm font-medium text-primary mt-1">Score: {g.result_home} - {g.result_away}</p>}
+                  {g.share_code && (
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground uppercase">Share code:</span>
+                      <code className="text-xs font-mono font-bold bg-secondary px-2 py-0.5 rounded tracking-wider">{g.share_code}</code>
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/g/${g.share_code}`;
+                          navigator.clipboard.writeText(url);
+                          toast({ title: "Link copied!", description: url });
+                        }}
+                        className="flex items-center gap-1 text-[10px] text-primary hover:underline"
+                      >
+                        <Copy className="w-3 h-3" /> Copy link
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const url = `${window.location.origin}/g/${g.share_code}`;
+                          if ((navigator as any).share) {
+                            try { await (navigator as any).share({ title: `${g.home_team} vs ${g.away_team}`, url }); } catch { /* dismissed */ }
+                          } else {
+                            navigator.clipboard.writeText(url);
+                            toast({ title: "Link copied!", description: url });
+                          }
+                        }}
+                        className="flex items-center gap-1 text-[10px] text-primary hover:underline"
+                      >
+                        <Share2 className="w-3 h-3" /> Share
+                      </button>
+                    </div>
+                  )}
                   {/* Betting stats */}
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
