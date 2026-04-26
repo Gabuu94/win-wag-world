@@ -84,6 +84,10 @@ const BettingSlipContent = () => {
       toast.error("No selections to share");
       return;
     }
+    setSharing(true);
+    setShareCode(null);
+    setCopied(false);
+    setShareOpen(true);
     // Try a few times in case of unique-collision
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = generateShortCode();
@@ -95,67 +99,100 @@ const BettingSlipContent = () => {
           created_by: user?.id ?? null,
         });
       if (!error) {
-        await navigator.clipboard.writeText(code);
-        toast.success(`Betslip code ${code} copied to clipboard!`);
+        setShareCode(code);
+        setSharing(false);
+        // Best-effort copy
+        try {
+          await navigator.clipboard.writeText(code);
+          setCopied(true);
+        } catch {
+          /* clipboard may be blocked; user can copy manually */
+        }
         return;
       }
-      // 23505 = unique violation, retry; otherwise abort
       if (error.code !== "23505") {
+        setSharing(false);
+        setShareOpen(false);
         toast.error("Could not generate code. Try again.");
         return;
       }
     }
+    setSharing(false);
+    setShareOpen(false);
     toast.error("Could not generate a unique code. Try again.");
+  };
+
+  const copyShareCode = async () => {
+    if (!shareCode) return;
+    try {
+      await navigator.clipboard.writeText(shareCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy. Long-press the code to copy manually.");
+    }
+  };
+
+  // Sanitise input: uppercase A-Z and 0-9 only, max 6 chars
+  const onCodeInputChange = (raw: string) => {
+    const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, CODE_LENGTH);
+    setCodeInput(cleaned);
+    if (loadError) setLoadError(null);
   };
 
   const handleLoadCode = async () => {
     const raw = codeInput.trim().toUpperCase();
-    if (!raw) return;
-
-    // New short-code path (6 chars, alphanumeric)
-    if (/^[A-Z0-9]{6}$/.test(raw)) {
-      const { data, error } = await supabase
-        .from("betslip_codes")
-        .select("selections, id, load_count")
-        .eq("code", raw)
-        .maybeSingle();
-
-      if (error || !data) {
-        toast.error("Betslip code not found");
-        return;
-      }
-      const decoded = data.selections as any;
-      if (Array.isArray(decoded) && decoded.length > 0) {
-        loadFromCode(decoded);
-        toast.success(`Loaded ${decoded.length} selection(s) from code ${raw}`);
-        setCodeInput("");
-        setShowCodeInput(false);
-        // Best-effort load count bump
-        supabase
-          .from("betslip_codes")
-          .update({ load_count: (data.load_count ?? 0) + 1 })
-          .eq("id", data.id)
-          .then(() => {});
-        return;
-      }
-      toast.error("Invalid betslip code");
+    if (!raw) {
+      setLoadError("Enter a 6-character betslip code.");
+      return;
+    }
+    if (!CODE_REGEX.test(raw)) {
+      setLoadError("Code must be exactly 6 letters or numbers (A–Z, 0–9).");
       return;
     }
 
-    // Backward-compatible base64 fallback for old long codes
-    try {
-      const decoded = JSON.parse(atob(codeInput.trim()));
-      if (Array.isArray(decoded) && decoded.length > 0) {
-        loadFromCode(decoded);
-        toast.success(`Loaded ${decoded.length} selection(s) from code`);
-        setCodeInput("");
-        setShowCodeInput(false);
-      } else {
-        toast.error("Invalid betslip code");
-      }
-    } catch {
-      toast.error("Invalid betslip code");
+    setLoading(true);
+    setLoadError(null);
+    const { data, error } = await supabase
+      .from("betslip_codes")
+      .select("selections, id, load_count")
+      .eq("code", raw)
+      .maybeSingle();
+
+    if (error) {
+      setLoading(false);
+      setLoadError("Something went wrong. Please try again.");
+      return;
     }
+    if (!data) {
+      setLoading(false);
+      setLoadError(`Code "${raw}" not found. Check the code and try again.`);
+      return;
+    }
+    const decoded = data.selections as any;
+    if (!Array.isArray(decoded) || decoded.length === 0) {
+      setLoading(false);
+      setLoadError("This betslip is empty or has expired.");
+      return;
+    }
+
+    loadFromCode(decoded);
+    toast.success(`Loaded ${decoded.length} selection(s) from code ${raw}`);
+    // Best-effort load count bump
+    supabase
+      .from("betslip_codes")
+      .update({ load_count: (data.load_count ?? 0) + 1 })
+      .eq("id", data.id)
+      .then(() => {});
+    setCodeInput("");
+    setLoading(false);
+    setLoadOpen(false);
+  };
+
+  const openLoadDialog = () => {
+    setCodeInput("");
+    setLoadError(null);
+    setLoadOpen(true);
   };
 
   const ke = isKenyan(profile);
