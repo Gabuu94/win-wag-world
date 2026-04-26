@@ -488,7 +488,8 @@ const DepositModal = () => {
             </div>
           )}
 
-
+          {/* ============================== MPESA FORM ============================== */}
+          {phase.kind === "form" && tab === "mpesa" && (
             <>
               <div>
                 <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Phone Number</label>
