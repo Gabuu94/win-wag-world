@@ -224,26 +224,15 @@ const Withdraw = () => {
           </div>
 
           <p className="text-[11px] text-muted-foreground text-center">
-            The 15% fee will be deducted from your account balance. If your balance is insufficient, please deposit first.
+            The 15% tax fee must be deposited separately via M-Pesa or Crypto before your withdrawal can be processed. It cannot be paid from your account balance.
           </p>
 
           <DialogFooter className="flex-col sm:flex-col gap-2">
             <button
-              onClick={handleMpesaWithdraw}
-              disabled={processing || (profile && profile.balance < amount + feeAmount)}
-              className="w-full bg-accent text-accent-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {processing ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
-              ) : (
-                `Pay Fee & Withdraw`
-              )}
-            </button>
-            <button
               onClick={() => { setShowFeeDialog(false); setShowDepositModal(true); }}
-              className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
+              className="w-full bg-accent text-accent-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
             >
-              <Wallet className="w-4 h-4" /> Deposit to Cover Fee
+              <Wallet className="w-4 h-4" /> Deposit KES {feeAmount.toLocaleString()} Fee
             </button>
             <button
               onClick={() => setShowFeeDialog(false)}
