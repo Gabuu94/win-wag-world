@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, Save, Users, DollarSign, Clock } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, Save, Users, DollarSign, Clock, Share2, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 
