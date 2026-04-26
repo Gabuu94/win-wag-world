@@ -270,14 +270,22 @@ export function useOdds(sportKey: string = "upcoming") {
         }
       }
 
-      if (!response.ok) {
+      if (!response || !response.ok) {
         setMatches([...adminGames, ...getFallbackMatches(sportKey)]);
         setNotice(adminGames.length > 0 ? null : FALLBACK_NOTICE);
         setLastUpdated(new Date());
         return;
       }
 
-      const result = await response.json();
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch {
+        setMatches([...adminGames, ...getFallbackMatches(sportKey)]);
+        setNotice(adminGames.length > 0 ? null : FALLBACK_NOTICE);
+        setLastUpdated(new Date());
+        return;
+      }
 
       if (result.fallback || result.error) {
         setMatches([...adminGames, ...getFallbackMatches(sportKey)]);
