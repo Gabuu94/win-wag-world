@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, Mail, Lock, User, Gift, Phone, Globe } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { X, Lock, User, Gift, Phone, Globe } from "lucide-react";
+import { useAuth, phoneToSyntheticEmail } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 
