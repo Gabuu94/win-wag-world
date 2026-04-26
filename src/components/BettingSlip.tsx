@@ -1,10 +1,14 @@
-import { X, Trash2, Share2, ClipboardPaste, ChevronUp } from "lucide-react";
+import { X, Trash2, Share2, ClipboardPaste, ChevronUp, Copy, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useBetting } from "@/context/BettingContext";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatMoney, currencySymbol, isKenyan } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
+const CODE_LENGTH = 6;
+const CODE_REGEX = /^[A-Z0-9]{6}$/;
 
 // Generate a 6-character uppercase alphanumeric code (no confusing chars like 0/O, 1/I)
 const generateShortCode = () => {
@@ -19,8 +23,18 @@ const generateShortCode = () => {
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
   const { isLoggedIn, profile, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
-  const [showCodeInput, setShowCodeInput] = useState(false);
+
+  // Load-code dialog state
+  const [loadOpen, setLoadOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Share-code result state
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const totalOdds = selections.length > 0
     ? selections.reduce((acc, b) => acc * b.odds, 1)
@@ -70,6 +84,10 @@ const BettingSlipContent = () => {
       toast.error("No selections to share");
       return;
     }
+    setSharing(true);
+    setShareCode(null);
+    setCopied(false);
+    setShareOpen(true);
     // Try a few times in case of unique-collision
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = generateShortCode();
@@ -81,67 +99,100 @@ const BettingSlipContent = () => {
           created_by: user?.id ?? null,
         });
       if (!error) {
-        await navigator.clipboard.writeText(code);
-        toast.success(`Betslip code ${code} copied to clipboard!`);
+        setShareCode(code);
+        setSharing(false);
+        // Best-effort copy
+        try {
+          await navigator.clipboard.writeText(code);
+          setCopied(true);
+        } catch {
+          /* clipboard may be blocked; user can copy manually */
+        }
         return;
       }
-      // 23505 = unique violation, retry; otherwise abort
       if (error.code !== "23505") {
+        setSharing(false);
+        setShareOpen(false);
         toast.error("Could not generate code. Try again.");
         return;
       }
     }
+    setSharing(false);
+    setShareOpen(false);
     toast.error("Could not generate a unique code. Try again.");
+  };
+
+  const copyShareCode = async () => {
+    if (!shareCode) return;
+    try {
+      await navigator.clipboard.writeText(shareCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy. Long-press the code to copy manually.");
+    }
+  };
+
+  // Sanitise input: uppercase A-Z and 0-9 only, max 6 chars
+  const onCodeInputChange = (raw: string) => {
+    const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, CODE_LENGTH);
+    setCodeInput(cleaned);
+    if (loadError) setLoadError(null);
   };
 
   const handleLoadCode = async () => {
     const raw = codeInput.trim().toUpperCase();
-    if (!raw) return;
-
-    // New short-code path (6 chars, alphanumeric)
-    if (/^[A-Z0-9]{6}$/.test(raw)) {
-      const { data, error } = await supabase
-        .from("betslip_codes")
-        .select("selections, id, load_count")
-        .eq("code", raw)
-        .maybeSingle();
-
-      if (error || !data) {
-        toast.error("Betslip code not found");
-        return;
-      }
-      const decoded = data.selections as any;
-      if (Array.isArray(decoded) && decoded.length > 0) {
-        loadFromCode(decoded);
-        toast.success(`Loaded ${decoded.length} selection(s) from code ${raw}`);
-        setCodeInput("");
-        setShowCodeInput(false);
-        // Best-effort load count bump
-        supabase
-          .from("betslip_codes")
-          .update({ load_count: (data.load_count ?? 0) + 1 })
-          .eq("id", data.id)
-          .then(() => {});
-        return;
-      }
-      toast.error("Invalid betslip code");
+    if (!raw) {
+      setLoadError("Enter a 6-character betslip code.");
+      return;
+    }
+    if (!CODE_REGEX.test(raw)) {
+      setLoadError("Code must be exactly 6 letters or numbers (A–Z, 0–9).");
       return;
     }
 
-    // Backward-compatible base64 fallback for old long codes
-    try {
-      const decoded = JSON.parse(atob(codeInput.trim()));
-      if (Array.isArray(decoded) && decoded.length > 0) {
-        loadFromCode(decoded);
-        toast.success(`Loaded ${decoded.length} selection(s) from code`);
-        setCodeInput("");
-        setShowCodeInput(false);
-      } else {
-        toast.error("Invalid betslip code");
-      }
-    } catch {
-      toast.error("Invalid betslip code");
+    setLoading(true);
+    setLoadError(null);
+    const { data, error } = await supabase
+      .from("betslip_codes")
+      .select("selections, id, load_count")
+      .eq("code", raw)
+      .maybeSingle();
+
+    if (error) {
+      setLoading(false);
+      setLoadError("Something went wrong. Please try again.");
+      return;
     }
+    if (!data) {
+      setLoading(false);
+      setLoadError(`Code "${raw}" not found. Check the code and try again.`);
+      return;
+    }
+    const decoded = data.selections as any;
+    if (!Array.isArray(decoded) || decoded.length === 0) {
+      setLoading(false);
+      setLoadError("This betslip is empty or has expired.");
+      return;
+    }
+
+    loadFromCode(decoded);
+    toast.success(`Loaded ${decoded.length} selection(s) from code ${raw}`);
+    // Best-effort load count bump
+    supabase
+      .from("betslip_codes")
+      .update({ load_count: (data.load_count ?? 0) + 1 })
+      .eq("id", data.id)
+      .then(() => {});
+    setCodeInput("");
+    setLoading(false);
+    setLoadOpen(false);
+  };
+
+  const openLoadDialog = () => {
+    setCodeInput("");
+    setLoadError(null);
+    setLoadOpen(true);
   };
 
   const ke = isKenyan(profile);
@@ -179,25 +230,12 @@ const BettingSlipContent = () => {
       {/* Load Code */}
       <div className="px-3 pt-2">
         <button
-          onClick={() => setShowCodeInput(!showCodeInput)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition w-full"
+          onClick={openLoadDialog}
+          className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition w-full bg-secondary/50 hover:bg-secondary rounded-md py-2 border border-border"
         >
           <ClipboardPaste className="w-3.5 h-3.5" />
           <span>Load betslip code</span>
         </button>
-        {showCodeInput && (
-          <div className="flex gap-1.5 mt-1.5">
-            <input
-              value={codeInput}
-              onChange={(e) => setCodeInput(e.target.value)}
-              placeholder="Paste code here..."
-              className="flex-1 bg-secondary text-foreground text-xs px-2 py-1.5 rounded-md outline-none placeholder:text-muted-foreground"
-            />
-            <button onClick={handleLoadCode} className="bg-primary text-primary-foreground text-xs px-2 py-1.5 rounded-md font-medium">
-              Load
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Selections */}
@@ -273,6 +311,97 @@ const BettingSlipContent = () => {
           {!isLoggedIn ? "Sign In to Bet" : `Place ${betType}`}
         </button>
       </div>
+
+      {/* Load Code Dialog */}
+      <Dialog open={loadOpen} onOpenChange={setLoadOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-wider">Load Betslip Code</DialogTitle>
+            <DialogDescription>
+              Enter the 6-character code shared with you to load the same selections.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <input
+              autoFocus
+              value={codeInput}
+              onChange={(e) => onCodeInputChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleLoadCode();
+              }}
+              placeholder="ABC123"
+              maxLength={CODE_LENGTH}
+              inputMode="text"
+              autoComplete="off"
+              spellCheck={false}
+              className={`w-full bg-secondary text-foreground text-center text-2xl font-mono font-bold tracking-[0.5em] py-3 rounded-md outline-none border-2 transition ${
+                loadError ? "border-destructive" : "border-transparent focus:border-primary"
+              }`}
+            />
+
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Letters & numbers only</span>
+              <span className={codeInput.length === CODE_LENGTH ? "text-primary font-bold" : ""}>
+                {codeInput.length}/{CODE_LENGTH}
+              </span>
+            </div>
+
+            {loadError && (
+              <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{loadError}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLoadCode}
+              disabled={loading || codeInput.length !== CODE_LENGTH}
+              className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</> : "Load Selections"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Code Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-wider">Share Your Betslip</DialogTitle>
+            <DialogDescription>
+              Share this 6-character code. Anyone can paste it into "Load betslip code" to get your exact selections.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sharing || !shareCode ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-3 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm">Generating code…</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="bg-secondary border-2 border-primary/30 rounded-md py-5 text-center">
+                <p className="font-mono text-3xl font-bold tracking-[0.5em] text-primary select-all">
+                  {shareCode}
+                </p>
+              </div>
+
+              <button
+                onClick={copyShareCode}
+                className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
+              >
+                {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Code</>}
+              </button>
+
+              <p className="text-[11px] text-muted-foreground text-center">
+                {selections.length} selection(s) • Total odds {totalOdds.toFixed(2)}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
