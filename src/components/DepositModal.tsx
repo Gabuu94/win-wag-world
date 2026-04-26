@@ -267,6 +267,7 @@ const DepositModal = () => {
 
   const resetToForm = () => {
     setPhase({ kind: "form" });
+    setTab(null);
     pendingTxRef.current = null;
   };
 
