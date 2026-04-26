@@ -180,7 +180,7 @@ const BettingSlipContent = () => {
         </div>
 
         <div className="flex items-center bg-secondary rounded-md overflow-hidden">
-          <span className="text-xs text-muted-foreground px-3">$</span>
+          <span className="text-xs text-muted-foreground px-3 font-bold">{sym}</span>
           <input
             type="number"
             value={stake}
@@ -193,13 +193,13 @@ const BettingSlipContent = () => {
         {isLoggedIn && profile && (
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Balance</span>
-            <span className="font-medium text-foreground">${profile.balance.toFixed(2)}</span>
+            <span className="font-medium text-foreground">{formatMoney(profile.balance, profile)}</span>
           </div>
         )}
 
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Potential Win</span>
-          <span className="font-bold text-accent">{potentialWin > 0 ? `$${potentialWin.toFixed(2)}` : "—"}</span>
+          <span className="font-bold text-accent">{potentialWin > 0 ? formatMoney(potentialWin, profile) : "—"}</span>
         </div>
 
         <button
