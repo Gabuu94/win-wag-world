@@ -395,8 +395,100 @@ const DepositModal = () => {
         )}
 
         <div className="p-6 space-y-5">
-          {/* ============================== FORM PHASE ============================== */}
-          {phase.kind === "form" && tab === "mpesa" && (
+          {/* ============================== METHOD PICKER ============================== */}
+          {phase.kind === "form" && tab === null && (
+            <div className="space-y-5 animate-in fade-in duration-200">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Account</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-base font-bold text-foreground">
+                    {profile?.username || "Guest"}
+                  </span>
+                  {profile && (
+                    <span className="text-xs text-muted-foreground">· {formatMoney(profile.balance, profile)}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="inline-block bg-accent/15 text-accent border border-accent/30 px-3 py-1.5 rounded-md">
+                <span className="text-xs font-bold uppercase tracking-wider">Types of payment systems</span>
+              </div>
+
+              {/* Recommended */}
+              <div className="bg-secondary/40 border border-border rounded-lg p-3">
+                <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-3">Recommended</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {ke && (
+                    <MethodCard
+                      label="M-Pesa"
+                      icon={<Smartphone className="w-7 h-7 text-primary" />}
+                      brandColor="text-primary"
+                      onClick={() => setTab("mpesa")}
+                    />
+                  )}
+                  <MethodCard
+                    label="Crypto"
+                    icon={<Bitcoin className="w-7 h-7 text-accent" />}
+                    brandColor="text-accent"
+                    badge="+5%"
+                    onClick={() => setTab("crypto")}
+                  />
+                  {!ke && (
+                    <MethodCard
+                      label="Card"
+                      icon={<CreditCard className="w-7 h-7 text-muted-foreground" />}
+                      brandColor="text-muted-foreground"
+                      disabled
+                      onClick={() => {}}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Other methods */}
+              <div className="bg-secondary/40 border border-border rounded-lg p-3">
+                <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-3">
+                  {ke ? "Mobile Payments" : "Other Methods"}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <MethodCard
+                    label="Airtel"
+                    icon={<Smartphone className="w-7 h-7 text-destructive" />}
+                    brandColor="text-destructive"
+                    disabled
+                    onClick={() => {}}
+                  />
+                  <MethodCard
+                    label="Bank"
+                    icon={<Landmark className="w-7 h-7 text-muted-foreground" />}
+                    brandColor="text-muted-foreground"
+                    disabled
+                    onClick={() => {}}
+                  />
+                  <MethodCard
+                    label="Card"
+                    icon={<CreditCard className="w-7 h-7 text-muted-foreground" />}
+                    brandColor="text-muted-foreground"
+                    disabled
+                    onClick={() => {}}
+                  />
+                  <MethodCard
+                    label="PayPal"
+                    icon={<Wallet className="w-7 h-7 text-muted-foreground" />}
+                    brandColor="text-muted-foreground"
+                    disabled
+                    onClick={() => {}}
+                  />
+                </div>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground text-center">
+                Choose a payment method to continue. Deposits are processed securely.
+              </p>
+            </div>
+          )}
+
+
             <>
               <div>
                 <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Phone Number</label>
