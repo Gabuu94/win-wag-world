@@ -560,6 +560,9 @@ const DepositModal = () => {
                 </div>
               )}
 
+              {/* All-steps-complete progress */}
+              <DepositProgress phase={phase} method={phase.method} />
+
               <div className="flex gap-2">
                 <button onClick={resetToForm} className="flex-1 bg-secondary text-secondary-foreground py-2.5 rounded-md font-medium text-xs uppercase tracking-wider hover:bg-muted transition">
                   Deposit More
