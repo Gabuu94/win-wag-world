@@ -134,6 +134,51 @@ const DepositProgress = forwardRef<HTMLDivElement, {
 });
 DepositProgress.displayName = "DepositProgress";
 
+// Reference-style payment method card (logo on white tile + label band beneath)
+const MethodCard = ({
+  label,
+  icon,
+  brandColor,
+  badge,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  brandColor?: string;
+  badge?: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onClick}
+    className={`relative group flex flex-col rounded-md overflow-hidden border transition ${
+      disabled
+        ? "border-border opacity-50 cursor-not-allowed"
+        : "border-border hover:border-primary hover:shadow-[0_0_0_1px_hsl(var(--primary))] cursor-pointer"
+    }`}
+  >
+    {badge && (
+      <span className="absolute top-1 right-1 z-10 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+        {badge}
+      </span>
+    )}
+    <div className="bg-white flex-1 flex items-center justify-center py-5">
+      <div className={brandColor}>{icon}</div>
+    </div>
+    <div className="bg-accent/80 text-accent-foreground py-2 text-center text-xs font-bold tracking-wide">
+      {label}
+    </div>
+    {disabled && (
+      <span className="absolute bottom-9 right-1 text-[8px] uppercase tracking-wider bg-muted text-muted-foreground px-1 rounded">
+        Soon
+      </span>
+    )}
+  </button>
+);
+
 const DepositModal = () => {
   const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
   const ke = isKenyan(profile);
