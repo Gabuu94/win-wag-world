@@ -27,8 +27,15 @@ const tabs: { key: PaymentTab; label: string; icon: any; active: boolean }[] = [
 ];
 
 const DepositModal = () => {
-  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile } = useAuth();
-  const [tab, setTab] = useState<PaymentTab>("mpesa");
+  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
+  const ke = isKenyan(profile);
+  const [tab, setTab] = useState<PaymentTab>(ke ? "mpesa" : "crypto");
+
+  // If profile loads/changes (e.g. user switches country), and they aren't Kenyan,
+  // force away from the M-Pesa tab to crypto.
+  useEffect(() => {
+    if (!ke && tab === "mpesa") setTab("crypto");
+  }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [mpesaAmount, setMpesaAmount] = useState(500);
