@@ -17,7 +17,7 @@ interface BetRow {
 }
 
 const BetHistory = () => {
-  const { user, isLoggedIn, setShowAuthModal } = useAuth();
+  const { user, isLoggedIn, setShowAuthModal, profile } = useAuth();
   const navigate = useNavigate();
   const [bets, setBets] = useState<BetRow[]>([]);
   const [loading, setLoading] = useState(true);
