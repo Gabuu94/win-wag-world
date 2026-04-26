@@ -569,28 +569,48 @@ const AdminGameCreator = () => {
           <div>
             <h4 className="font-medium text-sm mb-2">Betting Markets ({form.markets.filter(m => m.enabled).length} active)</h4>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {form.markets.map((market, mIdx) => (
-                <div key={mIdx} className={`border rounded-lg p-3 ${market.enabled ? "border-primary/30 bg-primary/5" : "border-border opacity-50"}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={market.enabled} onChange={() => toggleMarket(mIdx)} className="rounded" />
-                      <span className="text-sm font-medium">{market.name}</span>
-                    </label>
-                  </div>
-                  {market.enabled && (
-                    <div className="space-y-1.5">
-                      {market.selections.map((sel, sIdx) => (
-                        <div key={sIdx} className="flex items-center gap-2">
-                          <input value={sel.name} onChange={(e) => updateSelectionName(mIdx, sIdx, e.target.value)} className="flex-1 bg-secondary rounded px-2 py-1 text-xs outline-none" />
-                          <input type="number" step="0.05" value={sel.odds} onChange={(e) => updateMarketOdds(mIdx, sIdx, Number(e.target.value))} className="w-20 bg-secondary rounded px-2 py-1 text-xs outline-none text-center" />
-                          <button onClick={() => removeSelection(mIdx, sIdx)} className="text-destructive hover:bg-destructive/10 p-0.5 rounded"><Trash2 className="w-3 h-3" /></button>
-                        </div>
-                      ))}
-                      <button onClick={() => addCustomSelection(mIdx)} className="text-xs text-primary hover:underline">+ Add option</button>
+              {form.markets.map((market, mIdx) => {
+                const isCustom = market.type.startsWith("custom_");
+                return (
+                  <div key={mIdx} className={`border rounded-lg p-3 ${market.enabled ? "border-primary/30 bg-primary/5" : "border-border opacity-50"}`}>
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                      <label className="flex items-center gap-2 flex-1 min-w-0">
+                        <input type="checkbox" checked={market.enabled} onChange={() => toggleMarket(mIdx)} className="rounded" />
+                        {isCustom ? (
+                          <input
+                            value={market.name}
+                            onChange={(e) => updateMarketName(mIdx, e.target.value)}
+                            placeholder="Market name (e.g. Who scores first)"
+                            className="flex-1 bg-secondary rounded px-2 py-1 text-sm font-medium outline-none"
+                          />
+                        ) : (
+                          <span className="text-sm font-medium">{market.name}</span>
+                        )}
+                      </label>
+                      {isCustom && (
+                        <button onClick={() => removeMarket(mIdx)} className="text-destructive hover:bg-destructive/10 p-1 rounded" title="Delete market">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                    {market.enabled && (
+                      <div className="space-y-1.5">
+                        {market.selections.map((sel, sIdx) => (
+                          <div key={sIdx} className="flex items-center gap-2">
+                            <input value={sel.name} onChange={(e) => updateSelectionName(mIdx, sIdx, e.target.value)} placeholder="e.g. 1, 2, Over 2.5" className="flex-1 bg-secondary rounded px-2 py-1 text-xs outline-none" />
+                            <input type="number" step="0.05" value={sel.odds} onChange={(e) => updateMarketOdds(mIdx, sIdx, Number(e.target.value))} className="w-20 bg-secondary rounded px-2 py-1 text-xs outline-none text-center" />
+                            <button onClick={() => removeSelection(mIdx, sIdx)} className="text-destructive hover:bg-destructive/10 p-0.5 rounded"><Trash2 className="w-3 h-3" /></button>
+                          </div>
+                        ))}
+                        <button onClick={() => addCustomSelection(mIdx)} className="text-xs text-primary hover:underline">+ Add option</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              <button onClick={addCustomMarket} className="w-full border border-dashed border-primary/40 text-primary text-xs py-2 rounded-lg hover:bg-primary/5">
+                + Add Custom Market
+              </button>
             </div>
           </div>
 
