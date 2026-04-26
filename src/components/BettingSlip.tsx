@@ -4,6 +4,17 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatMoney, currencySymbol, isKenyan } from "@/lib/currency";
+import { supabase } from "@/integrations/supabase/client";
+
+// Generate a 6-character uppercase alphanumeric code (no confusing chars like 0/O, 1/I)
+const generateShortCode = () => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+};
 
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
