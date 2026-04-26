@@ -69,6 +69,7 @@ const Withdraw = () => {
       await refreshProfile();
 
       toast.success("Withdrawal request submitted! You'll receive your M-Pesa within 24 hours.");
+      setShowFeeDialog(false);
       navigate("/transactions");
     } catch (err: any) {
       toast.error(err.message || "Withdrawal failed");
