@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
