@@ -19,14 +19,6 @@ const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
 
 const STK_TIMEOUT_SECONDS = 90;
 
-const buildTabs = (mpesaActive: boolean): { key: PaymentTab; label: string; icon: any; active: boolean }[] => [
-  { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: mpesaActive },
-  { key: "crypto", label: "Crypto", icon: Bitcoin, active: true },
-  { key: "airtel", label: "Airtel", icon: Smartphone, active: false },
-  { key: "card", label: "Card", icon: CreditCard, active: false },
-  { key: "bank", label: "Bank", icon: Landmark, active: false },
-  { key: "paypal", label: "PayPal", icon: Wallet, active: false },
-];
 
 type DepositPhase =
   | { kind: "form" }
