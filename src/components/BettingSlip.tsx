@@ -65,18 +65,70 @@ const BettingSlipContent = () => {
     }
   };
 
-  const generateCode = () => {
+  const generateCode = async () => {
     if (selections.length === 0) {
       toast.error("No selections to share");
       return;
     }
-    const code = btoa(JSON.stringify(selections));
-    navigator.clipboard.writeText(code);
-    toast.success("Betslip code copied to clipboard!");
+    // Try a few times in case of unique-collision
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = generateShortCode();
+      const { error } = await supabase
+        .from("betslip_codes")
+        .insert({
+          code,
+          selections: selections as any,
+          created_by: profile?.user_id ?? null,
+        });
+      if (!error) {
+        await navigator.clipboard.writeText(code);
+        toast.success(`Betslip code ${code} copied to clipboard!`);
+        return;
+      }
+      // 23505 = unique violation, retry; otherwise abort
+      if (error.code !== "23505") {
+        toast.error("Could not generate code. Try again.");
+        return;
+      }
+    }
+    toast.error("Could not generate a unique code. Try again.");
   };
 
-  const handleLoadCode = () => {
-    if (!codeInput.trim()) return;
+  const handleLoadCode = async () => {
+    const raw = codeInput.trim().toUpperCase();
+    if (!raw) return;
+
+    // New short-code path (6 chars, alphanumeric)
+    if (/^[A-Z0-9]{6}$/.test(raw)) {
+      const { data, error } = await supabase
+        .from("betslip_codes")
+        .select("selections, id, load_count")
+        .eq("code", raw)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast.error("Betslip code not found");
+        return;
+      }
+      const decoded = data.selections as any;
+      if (Array.isArray(decoded) && decoded.length > 0) {
+        loadFromCode(decoded);
+        toast.success(`Loaded ${decoded.length} selection(s) from code ${raw}`);
+        setCodeInput("");
+        setShowCodeInput(false);
+        // Best-effort load count bump
+        supabase
+          .from("betslip_codes")
+          .update({ load_count: (data.load_count ?? 0) + 1 })
+          .eq("id", data.id)
+          .then(() => {});
+        return;
+      }
+      toast.error("Invalid betslip code");
+      return;
+    }
+
+    // Backward-compatible base64 fallback for old long codes
     try {
       const decoded = JSON.parse(atob(codeInput.trim()));
       if (Array.isArray(decoded) && decoded.length > 0) {
