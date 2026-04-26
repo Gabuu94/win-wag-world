@@ -62,6 +62,11 @@ const DepositModal = () => {
 
   const handleMpesaDeposit = async () => {
     if (!isLoggedIn || !user) { setShowDepositModal(false); setShowAuthModal(true); return; }
+    if (!ke) {
+      toast.error("M-Pesa is only available for Kenyan accounts. Please use Crypto instead.");
+      setTab("crypto");
+      return;
+    }
     if (mpesaAmount < 10) { toast.error("Minimum deposit is KES 10"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
 
