@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Crown, Star, Zap, Gift, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import TopBar from "@/components/TopBar";
 
@@ -28,7 +29,7 @@ interface TierInfo {
 
 const VIP = () => {
   const navigate = useNavigate();
-  const { user, isLoggedIn, setShowAuthModal } = useAuth();
+  const { user, isLoggedIn, setShowAuthModal, profile } = useAuth();
   const [vipData, setVipData] = useState<VipData | null>(null);
   const [tiers, setTiers] = useState<TierInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ const VIP = () => {
               <div className="absolute top-0 right-0 w-32 h-32 opacity-10 text-8xl flex items-center justify-center">{vipData.tier_icon}</div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your Current Tier</p>
               <h2 className="text-3xl font-display font-bold mb-1" style={{ color: vipData.tier_color }}>{vipData.tier_icon} {vipData.tier_name}</h2>
-              <p className="text-sm text-muted-foreground mb-4">Total wagered: <span className="font-bold text-foreground">${vipData.total_wagered.toFixed(2)}</span></p>
+              <p className="text-sm text-muted-foreground mb-4">Total wagered: <span className="font-bold text-foreground">{formatMoney(vipData.total_wagered, profile)}</span></p>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-secondary rounded-lg p-3 text-center">
@@ -107,7 +108,7 @@ const VIP = () => {
                 <div>
                   <div className="flex justify-between text-xs text-muted-foreground mb-1">
                     <span>Progress to {vipData.next_tier_name}</span>
-                    <span>${vipData.total_wagered.toFixed(0)} / ${vipData.next_tier_min.toFixed(0)}</span>
+                    <span>{formatMoney(vipData.total_wagered, profile)} / {formatMoney(vipData.next_tier_min, profile)}</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2.5">
                     <div className="bg-primary h-2.5 rounded-full transition-all" style={{ width: `${progress}%` }} />

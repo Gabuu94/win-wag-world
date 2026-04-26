@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +16,7 @@ interface Transaction {
 }
 
 const TransactionHistory = () => {
-  const { user, isLoggedIn, setShowAuthModal } = useAuth();
+  const { user, isLoggedIn, setShowAuthModal, profile } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -101,7 +102,7 @@ const TransactionHistory = () => {
               </div>
               <div className="text-right">
                 <p className={`font-bold text-sm ${tx.type === "deposit" ? "text-primary" : "text-accent"}`}>
-                  {tx.type === "deposit" ? "+" : "-"}${tx.amount.toFixed(2)}
+                  {tx.type === "deposit" ? "+" : "-"}{formatMoney(tx.amount, profile)}
                 </p>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded capitalize ${statusColor(tx.status)}`}>
                   {tx.status}

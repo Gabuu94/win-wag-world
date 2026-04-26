@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 import TopBar from "@/components/TopBar";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,7 @@ interface BetRow {
 }
 
 const BetHistory = () => {
-  const { user, isLoggedIn, setShowAuthModal } = useAuth();
+  const { user, isLoggedIn, setShowAuthModal, profile } = useAuth();
   const navigate = useNavigate();
   const [bets, setBets] = useState<BetRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,11 +114,11 @@ const BetHistory = () => {
                 <div className="flex items-center justify-between pt-2 border-t border-border text-sm">
                   <div>
                     <span className="text-muted-foreground">Stake: </span>
-                    <span className="font-medium">${bet.stake.toFixed(2)}</span>
+                    <span className="font-medium">{formatMoney(bet.stake, profile)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Potential Win: </span>
-                    <span className="font-bold text-accent">${bet.potential_win.toFixed(2)}</span>
+                    <span className="font-bold text-accent">{formatMoney(bet.potential_win, profile)}</span>
                   </div>
                 </div>
               </div>

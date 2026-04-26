@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 import {
   X, Wallet, ArrowDownToLine, Users, Receipt, Ticket, MessageCircle,
   ClipboardList, Settings, Crown, ShieldCheck, LogOut, Home, Trophy,
@@ -79,7 +80,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
             {isLoggedIn && profile ? (
               <>
                 <p className="font-display font-bold text-sm">{profile.username}</p>
-                <p className="text-xs text-primary font-bold">Balance: ${profile.balance.toFixed(2)}</p>
+                <p className="text-xs text-primary font-bold">Balance: {formatMoney(profile.balance, profile)}</p>
               </>
             ) : (
               <p className="font-display font-bold text-sm">Menu</p>
