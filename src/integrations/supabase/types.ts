@@ -77,6 +77,7 @@ export type Database = {
           quarters_scores: Json | null
           result_away: number | null
           result_home: number | null
+          share_code: string | null
           sport: string
           start_time: string
           status: string
@@ -107,6 +108,7 @@ export type Database = {
           quarters_scores?: Json | null
           result_away?: number | null
           result_home?: number | null
+          share_code?: string | null
           sport?: string
           start_time: string
           status?: string
@@ -137,6 +139,7 @@ export type Database = {
           quarters_scores?: Json | null
           result_away?: number | null
           result_home?: number | null
+          share_code?: string | null
           sport?: string
           start_time?: string
           status?: string
@@ -603,6 +606,7 @@ export type Database = {
     }
     Functions: {
       auto_finish_admin_games: { Args: never; Returns: undefined }
+      generate_game_share_code: { Args: never; Returns: string }
       get_user_vip_tier: {
         Args: { p_user_id: string }
         Returns: {
