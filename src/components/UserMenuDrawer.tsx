@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 import {
   X, Wallet, ArrowDownToLine, Users, Receipt, Ticket, MessageCircle,
   ClipboardList, Settings, Crown, ShieldCheck, LogOut, Home, Trophy,
