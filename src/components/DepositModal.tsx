@@ -35,6 +35,107 @@ type DepositPhase =
   | { kind: "success"; amount: number; method: "mpesa" | "crypto" }
   | { kind: "failed"; method: "mpesa" | "crypto"; reason?: string };
 
+// Live 3-step progress indicator. State derived from the current deposit phase.
+type ProgressStatus = "done" | "active" | "pending" | "failed";
+const DepositProgress = ({
+  phase,
+  method,
+}: {
+  phase: DepositPhase;
+  method: "mpesa" | "crypto";
+}) => {
+  const labels = method === "mpesa"
+    ? ["STK Sent", "Awaiting PIN", "Funds Credited"]
+    : ["Address Issued", "Awaiting Transfer", "Funds Credited"];
+
+  let statuses: ProgressStatus[] = ["pending", "pending", "pending"];
+  if (phase.kind === "stk-sent" || phase.kind === "crypto-pending") {
+    statuses = ["done", "active", "pending"];
+  } else if (phase.kind === "success") {
+    statuses = ["done", "done", "done"];
+  } else if (phase.kind === "failed") {
+    statuses = ["done", "failed", "pending"];
+  }
+
+  const statusLabel =
+    phase.kind === "success" ? "Completed" :
+    phase.kind === "failed" ? "Failed" :
+    "Pending";
+  const statusColor =
+    phase.kind === "success" ? "bg-primary/15 text-primary border-primary/30" :
+    phase.kind === "failed" ? "bg-destructive/15 text-destructive border-destructive/30" :
+    "bg-accent/15 text-accent border-accent/30";
+
+  return (
+    <div className="bg-secondary/50 border border-border rounded-md p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Deposit Progress</span>
+        <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="flex items-center">
+        {statuses.map((s, i) => (
+          <div key={i} className="flex items-center flex-1 last:flex-none">
+            {/* Node */}
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-colors ${
+                  s === "done"
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : s === "active"
+                    ? "bg-accent/20 border-accent text-accent"
+                    : s === "failed"
+                    ? "bg-destructive/20 border-destructive text-destructive"
+                    : "bg-secondary border-border text-muted-foreground"
+                }`}
+              >
+                {s === "done" ? (
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                ) : s === "failed" ? (
+                  <X className="w-3.5 h-3.5" strokeWidth={3} />
+                ) : s === "active" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  i + 1
+                )}
+              </div>
+              <span
+                className={`text-[9px] uppercase tracking-wider text-center leading-tight w-16 ${
+                  s === "done" || s === "active"
+                    ? "text-foreground font-bold"
+                    : s === "failed"
+                    ? "text-destructive font-bold"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {labels[i]}
+              </span>
+            </div>
+            {/* Connector */}
+            {i < statuses.length - 1 && (
+              <div className="flex-1 h-0.5 mx-1 -mt-5 rounded overflow-hidden bg-border relative">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    statuses[i] === "done" && statuses[i + 1] !== "pending"
+                      ? statuses[i + 1] === "failed"
+                        ? "bg-destructive w-full"
+                        : "bg-primary w-full"
+                      : statuses[i] === "done"
+                      ? "bg-primary w-1/2"
+                      : "w-0"
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const DepositModal = () => {
   const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
   const ke = isKenyan(profile);
@@ -360,7 +461,9 @@ const DepositModal = () => {
                 </div>
               </div>
 
-              {/* Step-by-step guidance */}
+              {/* Live progress indicator */}
+              <DepositProgress phase={phase} method="mpesa" />
+
               <div className="space-y-2.5">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Next steps</p>
                 {[
@@ -420,6 +523,9 @@ const DepositModal = () => {
                 </div>
               </div>
 
+              {/* Live progress indicator */}
+              <DepositProgress phase={phase} method="crypto" />
+
               <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-md px-3 py-2.5 text-xs text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                 <span>Waiting for blockchain confirmation…</span>
@@ -454,6 +560,9 @@ const DepositModal = () => {
                 </div>
               )}
 
+              {/* All-steps-complete progress */}
+              <DepositProgress phase={phase} method={phase.method} />
+
               <div className="flex gap-2">
                 <button onClick={resetToForm} className="flex-1 bg-secondary text-secondary-foreground py-2.5 rounded-md font-medium text-xs uppercase tracking-wider hover:bg-muted transition">
                   Deposit More
@@ -479,6 +588,10 @@ const DepositModal = () => {
                     : "The crypto payment didn't go through.")}
                 </p>
               </div>
+
+              {/* Failed-state progress */}
+              <DepositProgress phase={phase} method={phase.method} />
+
               <button onClick={resetToForm} className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition">
                 Try Again
               </button>
