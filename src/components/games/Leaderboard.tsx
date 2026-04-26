@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Trophy, TrendingUp, Banknote } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 
 interface LeaderEntry {
   rank: number;
