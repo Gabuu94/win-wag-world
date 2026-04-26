@@ -164,7 +164,7 @@ const Withdraw = () => {
               </div>
             </div>
             <button
-              onClick={handleMpesaWithdraw}
+              onClick={validateAndOpenFeeDialog}
               disabled={processing || amount < 50 || !phoneNumber}
               className="w-full bg-accent text-accent-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
