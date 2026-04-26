@@ -523,6 +523,9 @@ const DepositModal = () => {
                 </div>
               </div>
 
+              {/* Live progress indicator */}
+              <DepositProgress phase={phase} method="crypto" />
+
               <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-md px-3 py-2.5 text-xs text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                 <span>Waiting for blockchain confirmation…</span>
