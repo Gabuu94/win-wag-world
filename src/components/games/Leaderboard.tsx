@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Trophy, TrendingUp, Banknote } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { formatMoney } from "@/lib/currency";
 
 interface LeaderEntry {
   rank: number;
@@ -51,6 +53,7 @@ const TABS = [
 
 const Leaderboard = () => {
   const [tab, setTab] = useState<string>("winners");
+  const { profile } = useAuth();
   const active = TABS.find(t => t.key === tab) || TABS[0];
 
   return (
@@ -85,7 +88,7 @@ const Leaderboard = () => {
                 {entry.multiplier}x
               </span>
             )}
-            <span className="text-xs font-bold text-primary">${entry.amount.toLocaleString()}</span>
+            <span className="text-xs font-bold text-primary">{formatMoney(entry.amount, profile)}</span>
           </div>
         ))}
       </div>
