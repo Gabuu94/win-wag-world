@@ -2,31 +2,53 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type WithdrawTab = "mpesa" | "crypto" | "bank";
 
 const presetAmountsKES = [500, 1000, 2500, 5000, 10000, 25000];
+const WITHDRAWAL_FEE_RATE = 0.15;
 
 const Withdraw = () => {
-  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile } = useAuth();
+  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, setShowDepositModal } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<WithdrawTab>("mpesa");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState(500);
   const [processing, setProcessing] = useState(false);
+  const [showFeeDialog, setShowFeeDialog] = useState(false);
+
+  const feeAmount = Math.round(amount * WITHDRAWAL_FEE_RATE);
+  const netReceive = amount - feeAmount;
 
   if (!isLoggedIn) {
     setShowAuthModal(true);
     return null;
   }
 
-  const handleMpesaWithdraw = async () => {
+  const validateAndOpenFeeDialog = () => {
     if (!user || !profile) return;
     if (amount < 50) { toast.error("Minimum withdrawal is KES 50"); return; }
     if (amount > profile.balance) { toast.error("Insufficient balance"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter valid M-Pesa number"); return; }
+    setShowFeeDialog(true);
+  };
+
+  const handleMpesaWithdraw = async () => {
+    if (!user || !profile) return;
+    if (profile.balance < feeAmount) {
+      toast.error("Insufficient balance to cover the 15% fee. Please deposit first.");
+      return;
+    }
 
     setProcessing(true);
     try {
@@ -47,6 +69,7 @@ const Withdraw = () => {
       await refreshProfile();
 
       toast.success("Withdrawal request submitted! You'll receive your M-Pesa within 24 hours.");
+      setShowFeeDialog(false);
       navigate("/transactions");
     } catch (err: any) {
       toast.error(err.message || "Withdrawal failed");
@@ -142,7 +165,7 @@ const Withdraw = () => {
               </div>
             </div>
             <button
-              onClick={handleMpesaWithdraw}
+              onClick={validateAndOpenFeeDialog}
               disabled={processing || amount < 50 || !phoneNumber}
               className="w-full bg-accent text-accent-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
@@ -169,6 +192,68 @@ const Withdraw = () => {
           </div>
         )}
       </div>
+
+      {/* Withdrawal Fee Confirmation Dialog */}
+      <Dialog open={showFeeDialog} onOpenChange={setShowFeeDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mb-2">
+              <AlertTriangle className="w-6 h-6 text-accent" />
+            </div>
+            <DialogTitle className="text-center font-display uppercase tracking-wider">
+              Withdrawal Tax Fee Required
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              As per government policy, a <span className="font-bold text-accent">15% tax fee</span> applies to all withdrawals.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-secondary/50 border border-border rounded-lg p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Withdrawal amount</span>
+              <span className="font-bold">KES {amount.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-destructive">
+              <span>Tax fee (15%)</span>
+              <span className="font-bold">- KES {feeAmount.toLocaleString()}</span>
+            </div>
+            <div className="border-t border-border pt-2 flex justify-between">
+              <span className="font-bold">You will receive</span>
+              <span className="font-bold text-primary">KES {netReceive.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground text-center">
+            The 15% fee will be deducted from your account balance. If your balance is insufficient, please deposit first.
+          </p>
+
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <button
+              onClick={handleMpesaWithdraw}
+              disabled={processing || (profile && profile.balance < amount + feeAmount)}
+              className="w-full bg-accent text-accent-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {processing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+              ) : (
+                `Pay Fee & Withdraw`
+              )}
+            </button>
+            <button
+              onClick={() => { setShowFeeDialog(false); setShowDepositModal(true); }}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
+            >
+              <Wallet className="w-4 h-4" /> Deposit to Cover Fee
+            </button>
+            <button
+              onClick={() => setShowFeeDialog(false)}
+              className="w-full text-muted-foreground hover:text-foreground py-2 text-xs uppercase tracking-wider"
+            >
+              Cancel
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
