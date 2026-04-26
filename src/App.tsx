@@ -21,6 +21,7 @@ import Verification from "./pages/Verification";
 import Promotions from "./pages/Promotions";
 import VirtualGames from "./pages/VirtualGames";
 import NotFound from "./pages/NotFound";
+import GameShare from "./pages/GameShare";
 
 // Admin
 import AdminLayout from "./pages/admin/AdminLayout";
