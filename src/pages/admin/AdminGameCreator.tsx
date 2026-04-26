@@ -84,7 +84,8 @@ function calcEndTime(startTime: string, sport: string, extraMinutes: number, has
   durationMins += extraMinutes;
 
   const end = new Date(start.getTime() + durationMins * 60000);
-  return end.toISOString().slice(0, 16);
+  // Return full ISO (with Z) so consumers parse it as UTC, not local time.
+  return end.toISOString();
 }
 
 interface GameForm {
