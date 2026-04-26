@@ -461,7 +461,9 @@ const DepositModal = () => {
                 </div>
               </div>
 
-              {/* Step-by-step guidance */}
+              {/* Live progress indicator */}
+              <DepositProgress phase={phase} method="mpesa" />
+
               <div className="space-y-2.5">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Next steps</p>
                 {[
