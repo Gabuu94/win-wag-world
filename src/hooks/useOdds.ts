@@ -182,12 +182,26 @@ export function useOdds(sportKey: string = "upcoming") {
       // Fetch admin games in parallel
       const adminGamesPromise = supabase.from("admin_games").select("*").eq("is_published", true);
 
-      const response = await fetch(`${baseUrl}/functions/v1/fetch-odds?sport=${sportKey}`, {
-        headers: {
-          Authorization: `Bearer ${anonKey}`,
-          apikey: anonKey,
-        },
-      });
+      const fetchWithRetry = async (attempt = 0): Promise<Response | null> => {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const res = await fetch(`${baseUrl}/functions/v1/fetch-odds?sport=${sportKey}`, {
+            headers: { Authorization: `Bearer ${anonKey}`, apikey: anonKey },
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          // Retry once on transient edge runtime errors
+          if ((res.status === 503 || res.status === 502 || res.status === 504) && attempt < 1) {
+            await new Promise((r) => setTimeout(r, 800));
+            return fetchWithRetry(attempt + 1);
+          }
+          return res;
+        } catch {
+          return null;
+        }
+      };
+      const response = await fetchWithRetry();
 
       const adminGamesRes = await adminGamesPromise;
       const now = Date.now();
