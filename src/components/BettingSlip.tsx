@@ -23,8 +23,18 @@ const generateShortCode = () => {
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
   const { isLoggedIn, profile, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
-  const [showCodeInput, setShowCodeInput] = useState(false);
+
+  // Load-code dialog state
+  const [loadOpen, setLoadOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Share-code result state
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const totalOdds = selections.length > 0
     ? selections.reduce((acc, b) => acc * b.odds, 1)
