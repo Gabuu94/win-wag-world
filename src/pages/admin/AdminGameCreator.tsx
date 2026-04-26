@@ -201,20 +201,29 @@ const AdminGameCreator = () => {
     setForm({ ...form, markets });
   };
 
+  // Convert "YYYY-MM-DDTHH:mm" (interpreted as Kenyan/EAT time, UTC+3) to a proper ISO string.
+  // Kenya does not observe DST, so the offset is always +03:00.
+  const toKenyaIso = (local: string): string => {
+    if (!local) return "";
+    // Append the EAT offset so Postgres stores the exact wall-clock time the admin picked.
+    return new Date(`${local}:00+03:00`).toISOString();
+  };
+
   const createGame = async () => {
     if (!form.home_team || !form.away_team || !form.start_time) {
       toast({ title: "Missing fields", description: "Fill in team names and start time", variant: "destructive" });
       return;
     }
 
-    const endTime = calcEndTime(form.start_time, form.sport, form.extra_minutes, form.has_extra_time);
+    const startIso = toKenyaIso(form.start_time);
+    const endTime = calcEndTime(startIso, form.sport, form.extra_minutes, form.has_extra_time);
 
     const { data: game, error: gameError } = await supabase.from("admin_games").insert({
       sport: form.sport,
       home_team: form.home_team,
       away_team: form.away_team,
       league: form.league || "Custom League",
-      start_time: form.start_time,
+      start_time: startIso,
       end_time: endTime || null,
       has_extra_time: form.has_extra_time,
       has_penalties: form.has_penalties,
@@ -503,10 +512,14 @@ const AdminGameCreator = () => {
           </div>
 
           {form.start_time && (
-            <div className="bg-secondary/50 rounded-md p-3">
+            <div className="bg-secondary/50 rounded-md p-3 space-y-1">
               <p className="text-xs text-muted-foreground">
                 <Clock className="w-3 h-3 inline mr-1" />
-                Calculated end time: <strong>{new Date(calcEndTime(form.start_time, form.sport, form.extra_minutes, form.has_extra_time)).toLocaleString()}</strong>
+                Start (Kenya/EAT): <strong>{new Date(toKenyaIso(form.start_time)).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}</strong>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <Clock className="w-3 h-3 inline mr-1" />
+                End (Kenya/EAT): <strong>{new Date(calcEndTime(toKenyaIso(form.start_time), form.sport, form.extra_minutes, form.has_extra_time)).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}</strong>
               </p>
             </div>
           )}
@@ -572,7 +585,7 @@ const AdminGameCreator = () => {
                     <span className={`text-[10px] px-2 py-0.5 rounded-full ${g.status === "live" ? "bg-red-500/20 text-red-400" : g.status === "finished" ? "bg-blue-500/20 text-blue-400" : "bg-secondary"}`}>{g.status}</span>
                   </div>
                   <h3 className="font-bold">{g.home_team} vs {g.away_team}</h3>
-                  <p className="text-xs text-muted-foreground">{new Date(g.start_time).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(g.start_time).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })} (EAT)</p>
                   {g.result_home !== null && <p className="text-sm font-medium text-primary mt-1">Score: {g.result_home} - {g.result_away}</p>}
                   {/* Betting stats */}
                   <div className="flex items-center gap-3 mt-1.5">
