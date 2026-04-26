@@ -89,7 +89,7 @@ const VIP = () => {
               <div className="absolute top-0 right-0 w-32 h-32 opacity-10 text-8xl flex items-center justify-center">{vipData.tier_icon}</div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your Current Tier</p>
               <h2 className="text-3xl font-display font-bold mb-1" style={{ color: vipData.tier_color }}>{vipData.tier_icon} {vipData.tier_name}</h2>
-              <p className="text-sm text-muted-foreground mb-4">Total wagered: <span className="font-bold text-foreground">${vipData.total_wagered.toFixed(2)}</span></p>
+              <p className="text-sm text-muted-foreground mb-4">Total wagered: <span className="font-bold text-foreground">{formatMoney(vipData.total_wagered, profile)}</span></p>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-secondary rounded-lg p-3 text-center">
