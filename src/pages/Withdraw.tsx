@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { formatMoney } from "@/lib/currency";
 import {
   Dialog,
   DialogContent,
