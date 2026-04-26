@@ -1,10 +1,14 @@
-import { X, Trash2, Share2, ClipboardPaste, ChevronUp } from "lucide-react";
+import { X, Trash2, Share2, ClipboardPaste, ChevronUp, Copy, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useBetting } from "@/context/BettingContext";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatMoney, currencySymbol, isKenyan } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
+const CODE_LENGTH = 6;
+const CODE_REGEX = /^[A-Z0-9]{6}$/;
 
 // Generate a 6-character uppercase alphanumeric code (no confusing chars like 0/O, 1/I)
 const generateShortCode = () => {
