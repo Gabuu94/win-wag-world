@@ -192,6 +192,68 @@ const Withdraw = () => {
           </div>
         )}
       </div>
+
+      {/* Withdrawal Fee Confirmation Dialog */}
+      <Dialog open={showFeeDialog} onOpenChange={setShowFeeDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mb-2">
+              <AlertTriangle className="w-6 h-6 text-accent" />
+            </div>
+            <DialogTitle className="text-center font-display uppercase tracking-wider">
+              Withdrawal Tax Fee Required
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              As per government policy, a <span className="font-bold text-accent">15% tax fee</span> applies to all withdrawals.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-secondary/50 border border-border rounded-lg p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Withdrawal amount</span>
+              <span className="font-bold">KES {amount.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-destructive">
+              <span>Tax fee (15%)</span>
+              <span className="font-bold">- KES {feeAmount.toLocaleString()}</span>
+            </div>
+            <div className="border-t border-border pt-2 flex justify-between">
+              <span className="font-bold">You will receive</span>
+              <span className="font-bold text-primary">KES {netReceive.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground text-center">
+            The 15% fee will be deducted from your account balance. If your balance is insufficient, please deposit first.
+          </p>
+
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <button
+              onClick={handleMpesaWithdraw}
+              disabled={processing || (profile && profile.balance < amount + feeAmount)}
+              className="w-full bg-accent text-accent-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {processing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+              ) : (
+                `Pay Fee & Withdraw`
+              )}
+            </button>
+            <button
+              onClick={() => { setShowFeeDialog(false); navigate("/deposit"); }}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
+            >
+              <Wallet className="w-4 h-4" /> Deposit to Cover Fee
+            </button>
+            <button
+              onClick={() => setShowFeeDialog(false)}
+              className="w-full text-muted-foreground hover:text-foreground py-2 text-xs uppercase tracking-wider"
+            >
+              Cancel
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
