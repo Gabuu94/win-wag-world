@@ -25,7 +25,6 @@ const AuthModal = () => {
   const { showAuthModal, setShowAuthModal, login, signup } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -44,12 +43,19 @@ const AuthModal = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phone.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
     setSubmitting(true);
     try {
+      const fullPhone = `${selectedCountry.dial}${phone.replace(/^0+/, "")}`;
+      const syntheticEmail = phoneToSyntheticEmail(fullPhone);
+
       if (isLogin) {
-        const result = await login(email, password);
+        const result = await login(syntheticEmail, password);
         if (result.error) {
-          toast.error(result.error);
+          toast.error("Invalid phone number or password");
         } else {
           toast.success("Welcome back!");
           setShowAuthModal(false);
@@ -61,8 +67,7 @@ const AuthModal = () => {
           setSubmitting(false);
           return;
         }
-        const fullPhone = phone ? `${selectedCountry.dial}${phone.replace(/^0+/, "")}` : undefined;
-        const result = await signup(username, email, password, referralCode || undefined, fullPhone, country, selectedCountry.currency);
+        const result = await signup(username, syntheticEmail, password, referralCode || undefined, fullPhone, country, selectedCountry.currency);
         if (result.error) {
           toast.error(result.error);
         } else {
@@ -78,7 +83,6 @@ const AuthModal = () => {
 
   const resetForm = () => {
     setUsername("");
-    setEmail("");
     setPhone("");
     setPassword("");
     setReferralCode("");
