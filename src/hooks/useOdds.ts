@@ -190,18 +190,33 @@ export function useOdds(sportKey: string = "upcoming") {
       });
 
       const adminGamesRes = await adminGamesPromise;
+      const now = Date.now();
       const adminGames: NormalizedMatch[] = (adminGamesRes.data || []).map((g: any) => {
         const commence = new Date(g.start_time);
-        const isLive = g.status === "live";
+        const end = g.end_time ? new Date(g.end_time) : null;
         const sportMatch = matchesSport({ sport: g.sport } as MatchData, sportKey);
         if (!sportMatch && sportKey !== "upcoming") return null;
+
+        // Auto-derive live state: explicit status=live OR scheduled window has started but not ended
+        const explicitlyFinished = g.status === "finished" || g.status === "cancelled";
+        const inScheduledWindow = commence.getTime() <= now && (!end || end.getTime() > now);
+        const isLive = !explicitlyFinished && (g.status === "live" || inScheduledWindow);
+        // Don't list cancelled/finished games in the upcoming/live feeds
+        if (explicitlyFinished) return null;
+
+        // Estimate live minute if admin hasn't manually set it
+        let liveMinute = g.current_minute || 0;
+        if (isLive && (!liveMinute || liveMinute === 0)) {
+          liveMinute = Math.max(1, Math.floor((now - commence.getTime()) / 60000));
+        }
+
         return {
           matchId: `admin-${g.id}`,
           league: (g.league || "Custom").toUpperCase(),
           sport: g.sport,
           team1: g.home_team,
           team2: g.away_team,
-          time: isLive ? `${g.current_minute}'` : getTimeUntil(commence),
+          time: isLive ? `${liveMinute}'` : getTimeUntil(commence),
           localTime: formatLocal(commence),
           providerTime: formatProvider(commence, "UTC"),
           providerTimezone: "UTC",
@@ -209,7 +224,7 @@ export function useOdds(sportKey: string = "upcoming") {
           odds: { home: 1.5, draw: 3.5, away: 4.0 },
           totalMarkets: 10,
           commenceTime: g.start_time,
-          gameState: isLive ? { home_score: g.result_home, away_score: g.result_away, period: g.current_period } : null,
+          gameState: isLive ? { home_score: g.result_home ?? 0, away_score: g.result_away ?? 0, period: g.current_period, minute: liveMinute } : null,
         };
       }).filter(Boolean) as NormalizedMatch[];
 
