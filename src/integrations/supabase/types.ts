@@ -181,6 +181,33 @@ export type Database = {
         }
         Relationships: []
       }
+      betslip_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          load_count: number
+          selections: Json
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          load_count?: number
+          selections: Json
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          load_count?: number
+          selections?: Json
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
