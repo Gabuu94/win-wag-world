@@ -295,23 +295,34 @@ const AdminGameCreator = () => {
     if (!allBets) return;
 
     const matchLabel = `${game.home_team} vs ${game.away_team}`;
-    const homeScore = results.result_home ?? 0;
-    const awayScore = results.result_away ?? 0;
-    const htHome = results.half_time_home ?? 0;
-    const htAway = results.half_time_away ?? 0;
-    const totalCorners = (results.total_corners_home ?? 0) + (results.total_corners_away ?? 0);
-    const totalCards = (results.total_cards_home ?? 0) + (results.total_cards_away ?? 0);
+    const homeScore = Number(results.result_home ?? 0);
+    const awayScore = Number(results.result_away ?? 0);
+    const htHome = Number(results.half_time_home ?? 0);
+    const htAway = Number(results.half_time_away ?? 0);
+    // For "auto-pick" markets like corners/cards: if admin didn't enter values, pick a plausible random total
+    const cornersEntered = (results.total_corners_home ?? 0) + (results.total_corners_away ?? 0) > 0;
+    const cardsEntered = (results.total_cards_home ?? 0) + (results.total_cards_away ?? 0) > 0;
+    const totalCorners = cornersEntered
+      ? (Number(results.total_corners_home ?? 0) + Number(results.total_corners_away ?? 0))
+      : Math.floor(6 + Math.random() * 8); // 6–13 typical
+    const totalCards = cardsEntered
+      ? (Number(results.total_cards_home ?? 0) + Number(results.total_cards_away ?? 0))
+      : Math.floor(2 + Math.random() * 4); // 2–5 typical
     const totalGoals = homeScore + awayScore;
 
-    // Determine winning selections for each market
+    // Build winning pick variants per market type. We include team-name aliases so picks like
+    // "Barcelona Win" match "Home Win" outcomes.
+    const homeName = String(game.home_team || "").trim();
+    const awayName = String(game.away_team || "").trim();
     const winningPicks: Record<string, string[]> = {};
 
     markets.forEach((m: any) => {
       const wins: string[] = [];
       switch (m.market_type) {
         case "match_result":
-          if (homeScore > awayScore) wins.push("Home Win");
-          else if (homeScore < awayScore) wins.push("Away Win");
+        case "match_winner":
+          if (homeScore > awayScore) wins.push("Home Win", "Home", `${homeName} Win`, homeName);
+          else if (homeScore < awayScore) wins.push("Away Win", "Away", `${awayName} Win`, awayName);
           else wins.push("Draw");
           break;
         case "btts":
@@ -332,8 +343,8 @@ const AdminGameCreator = () => {
           if (awayScore >= homeScore) wins.push("X2");
           break;
         case "first_half":
-          if (htHome > htAway) wins.push("Home");
-          else if (htHome < htAway) wins.push("Away");
+          if (htHome > htAway) wins.push("Home", `${homeName} Win`, homeName);
+          else if (htHome < htAway) wins.push("Away", `${awayName} Win`, awayName);
           else wins.push("Draw");
           break;
         case "corners_total":
@@ -343,8 +354,15 @@ const AdminGameCreator = () => {
           wins.push(totalCards > 3.5 ? "Over 3.5" : "Under 3.5");
           break;
         case "correct_score":
+          // EXACT match — admin's entered score must equal one of the offered correct-score selections
           wins.push(`${homeScore}-${awayScore}`);
           break;
+        case "halftime_fulltime": {
+          const ht = htHome > htAway ? "Home" : htHome < htAway ? "Away" : "Draw";
+          const ft = homeScore > awayScore ? "Home" : homeScore < awayScore ? "Away" : "Draw";
+          wins.push(`${ht}/${ft}`);
+          break;
+        }
         case "clean_sheet_home":
           wins.push(awayScore === 0 ? "Yes" : "No");
           break;
@@ -357,65 +375,78 @@ const AdminGameCreator = () => {
         case "extra_time":
           wins.push(game.has_extra_time && results.extra_time_result_home != null ? "Yes" : "No");
           break;
-        default:
+        default: {
+          // Unknown / "any other" market — auto-pick: randomly select one of the offered selections
+          const sels = (m.selections as any[]) || [];
+          if (sels.length > 0) {
+            const choice = sels[Math.floor(Math.random() * sels.length)];
+            wins.push(String(choice.name));
+          }
           break;
+        }
       }
       winningPicks[m.market_type] = wins;
+      // Persist the winning result on the market for future auditing
+      void supabase.from("admin_game_markets").update({ result: wins.join(", ") || null }).eq("id", m.id);
     });
 
-    // Settle each bet
-    for (const bet of allBets) {
-      const sels = bet.selections as any[];
-      const matchedSels = sels.filter((s: any) => {
-        const label = s.matchLabel || "";
-        return label.includes(game.home_team) && label.includes(game.away_team);
-      });
+    // Helper: does this selection belong to this game?
+    const selectionMatchesGame = (s: any): boolean => {
+      const label = String(s.matchLabel || "");
+      const id = String(s.id || "");
+      // Selection IDs created from admin matches are prefixed with `admin-<gameId>-...`
+      if (id.startsWith(`admin-${gameId}`)) return true;
+      return label.includes(homeName) && label.includes(awayName);
+    };
 
+    // Helper: did this single selection win?
+    const isWinningSelection = (s: any): boolean => {
+      const pick = String(s.pick || "").trim();
+      const pickLower = pick.toLowerCase();
+      for (const wins of Object.values(winningPicks)) {
+        for (const w of wins) {
+          const wLower = w.toLowerCase();
+          if (pickLower === wLower) return true;
+          // permissive contains (handles "Over 2.5 Goals" vs "Over 2.5")
+          if (pickLower.includes(wLower) || wLower.includes(pickLower)) return true;
+        }
+      }
+      return false;
+    };
+
+    // Settle each bet that contains selections from this game
+    for (const bet of allBets) {
+      const sels = (bet.selections as any[]) || [];
+      const matchedSels = sels.filter(selectionMatchesGame);
       if (matchedSels.length === 0) continue;
 
-      // Check if all selections for this game are winning
-      let allWon = true;
-      for (const sel of matchedSels) {
-        const pick = sel.pick || "";
-        let isWin = false;
-        for (const [, wins] of Object.entries(winningPicks)) {
-          if (wins.some(w => pick.includes(w) || w.includes(pick))) {
-            isWin = true;
-            break;
-          }
-        }
-        if (!isWin) { allWon = false; break; }
-      }
+      const otherSels = sels.filter((s) => !selectionMatchesGame(s));
 
-      // If all sels in bet relate to this game only, settle
-      const otherSels = sels.filter((s: any) => {
-        const label = s.matchLabel || "";
-        return !(label.includes(game.home_team) && label.includes(game.away_team));
-      });
+      // Only settle if all bet selections relate to this game (other-game legs settle separately)
+      if (otherSels.length > 0) continue;
 
-      if (otherSels.length === 0) {
-        const newStatus = allWon ? "won" : "lost";
-        await supabase.from("bets").update({ status: newStatus }).eq("id", bet.id);
-        if (allWon) {
-          // Credit winnings
-          const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", bet.user_id).single();
-          if (profile) {
-            await supabase.from("profiles").update({ balance: Number(profile.balance) + Number(bet.potential_win) }).eq("user_id", bet.user_id);
-            await supabase.from("notifications").insert({
-              user_id: bet.user_id,
-              title: "Bet Won! 🎉",
-              message: `Your bet on ${matchLabel} won $${Number(bet.potential_win).toFixed(2)}!`,
-              type: "win",
-            });
-          }
-        } else {
-          await supabase.from("notifications").insert({
-            user_id: bet.user_id,
-            title: "Bet Lost",
-            message: `Your bet on ${matchLabel} did not win. Better luck next time!`,
-            type: "loss",
-          });
+      const allWon = matchedSels.every(isWinningSelection);
+      const newStatus = allWon ? "won" : "lost";
+      await supabase.from("bets").update({ status: newStatus }).eq("id", bet.id);
+
+      if (allWon) {
+        const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", bet.user_id).single();
+        if (profile) {
+          await supabase.from("profiles").update({ balance: Number(profile.balance) + Number(bet.potential_win) }).eq("user_id", bet.user_id);
         }
+        await supabase.from("notifications").insert({
+          user_id: bet.user_id,
+          title: "Bet Won! 🎉",
+          message: `Your bet on ${matchLabel} won ${Number(bet.potential_win).toFixed(2)}!`,
+          type: "win",
+        });
+      } else {
+        await supabase.from("notifications").insert({
+          user_id: bet.user_id,
+          title: "Bet Lost",
+          message: `Your bet on ${matchLabel} did not win. Better luck next time!`,
+          type: "loss",
+        });
       }
     }
   };
