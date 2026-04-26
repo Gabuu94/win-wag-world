@@ -201,6 +201,37 @@ const AdminGameCreator = () => {
     setForm({ ...form, markets });
   };
 
+  const addCustomMarket = () => {
+    const id = `custom_${Date.now()}`;
+    setForm({
+      ...form,
+      markets: [
+        ...form.markets,
+        {
+          type: id,
+          name: "Custom Market",
+          enabled: true,
+          selections: [
+            { name: "1", odds: 2.0 },
+            { name: "2", odds: 2.0 },
+          ],
+        },
+      ],
+    });
+  };
+
+  const updateMarketName = (idx: number, name: string) => {
+    const markets = [...form.markets];
+    markets[idx].name = name;
+    setForm({ ...form, markets });
+  };
+
+  const removeMarket = (idx: number) => {
+    const markets = [...form.markets];
+    markets.splice(idx, 1);
+    setForm({ ...form, markets });
+  };
+
   // Convert "YYYY-MM-DDTHH:mm" (interpreted as Kenyan/EAT time, UTC+3) to a proper ISO string.
   // Kenya does not observe DST, so the offset is always +03:00.
   const toKenyaIso = (local: string): string => {
