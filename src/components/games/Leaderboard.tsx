@@ -53,6 +53,7 @@ const TABS = [
 
 const Leaderboard = () => {
   const [tab, setTab] = useState<string>("winners");
+  const { profile } = useAuth();
   const active = TABS.find(t => t.key === tab) || TABS[0];
 
   return (
