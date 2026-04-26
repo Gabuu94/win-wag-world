@@ -46,7 +46,7 @@ const BettingSlipContent = () => {
 
     if (ok) {
       toast.success(
-        `${betType} placed! $${stake.toFixed(2)} on ${selections.length} selection(s) — Potential win: $${potentialWin.toFixed(2)}`
+        `${betType} placed! ${formatMoney(stake, profile)} on ${selections.length} selection(s) — Potential win: ${formatMoney(potentialWin, profile)}`
       );
       clearAll();
     } else {
