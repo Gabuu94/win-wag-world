@@ -108,7 +108,7 @@ const VIP = () => {
                 <div>
                   <div className="flex justify-between text-xs text-muted-foreground mb-1">
                     <span>Progress to {vipData.next_tier_name}</span>
-                    <span>${vipData.total_wagered.toFixed(0)} / ${vipData.next_tier_min.toFixed(0)}</span>
+                    <span>{formatMoney(vipData.total_wagered, profile)} / {formatMoney(vipData.next_tier_min, profile)}</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2.5">
                     <div className="bg-primary h-2.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
