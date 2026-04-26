@@ -240,7 +240,7 @@ const Withdraw = () => {
               )}
             </button>
             <button
-              onClick={() => { setShowFeeDialog(false); navigate("/deposit"); }}
+              onClick={() => { setShowFeeDialog(false); setShowDepositModal(true); }}
               className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
             >
               <Wallet className="w-4 h-4" /> Deposit to Cover Fee
