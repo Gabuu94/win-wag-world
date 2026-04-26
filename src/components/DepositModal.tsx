@@ -157,7 +157,7 @@ const DepositModal = () => {
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-6 border-b border-border overflow-x-auto">
-          {tabs.map((t) => (
+          {buildTabs(ke).map((t) => (
             <button
               key={t.key}
               onClick={() => t.active ? setTab(t.key) : null}
