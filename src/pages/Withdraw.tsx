@@ -19,7 +19,7 @@ const presetAmountsKES = [500, 1000, 2500, 5000, 10000, 25000];
 const WITHDRAWAL_FEE_RATE = 0.15;
 
 const Withdraw = () => {
-  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile } = useAuth();
+  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, setShowDepositModal } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<WithdrawTab>("mpesa");
   const [phoneNumber, setPhoneNumber] = useState("");
