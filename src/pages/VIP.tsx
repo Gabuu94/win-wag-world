@@ -29,7 +29,7 @@ interface TierInfo {
 
 const VIP = () => {
   const navigate = useNavigate();
-  const { user, isLoggedIn, setShowAuthModal } = useAuth();
+  const { user, isLoggedIn, setShowAuthModal, profile } = useAuth();
   const [vipData, setVipData] = useState<VipData | null>(null);
   const [tiers, setTiers] = useState<TierInfo[]>([]);
   const [loading, setLoading] = useState(true);
