@@ -23,9 +23,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const pay_currency = currency || 'btc';
+    const pay_currency = (currency || 'btc').toLowerCase();
 
-    // Create payment via NOWPayments
+    // 1. Check NOWPayments minimum for this currency (returned in the crypto unit)
+    const minRes = await fetch(
+      `https://api.nowpayments.io/v1/min-amount?currency_from=usd&currency_to=${pay_currency}`,
+      { headers: { 'x-api-key': NOWPAYMENTS_API_KEY } },
+    );
+    const minData = await minRes.json().catch(() => ({}));
+    const minFiat = Number(minData?.fiat_equivalent ?? minData?.min_amount ?? 0);
+
+    if (minFiat > 0 && Number(amount_usd) < minFiat) {
+      const minRounded = Math.ceil(minFiat * 100) / 100;
+      return new Response(JSON.stringify({
+        error: `Minimum deposit for ${pay_currency.toUpperCase()} is about $${minRounded.toFixed(2)}. Please increase the amount or pick another coin.`,
+        min_usd: minRounded,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 2. Create payment via NOWPayments
     const response = await fetch('https://api.nowpayments.io/v1/payment', {
       method: 'POST',
       headers: {
@@ -45,6 +64,15 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
+      // Surface NOWPayments' minimum-amount error in a clean way
+      if (data?.code === 'AMOUNT_MINIMAL_ERROR') {
+        return new Response(JSON.stringify({
+          error: `Amount is below the minimum for ${pay_currency.toUpperCase()}. Try a larger deposit or a different coin.`,
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       throw new Error(`NOWPayments error [${response.status}]: ${JSON.stringify(data)}`);
     }
 
