@@ -81,7 +81,9 @@ const BettingSlipContent = () => {
     }
   };
 
-  const quickStakes = [5, 10, 25, 50, 100];
+  const ke = isKenyan(profile);
+  const quickStakes = ke ? [50, 100, 250, 500, 1000] : [5, 10, 25, 50, 100];
+  const sym = currencySymbol(profile);
 
   return (
     <div className="flex flex-col h-full">
