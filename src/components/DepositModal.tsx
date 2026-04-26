@@ -137,12 +137,13 @@ DepositProgress.displayName = "DepositProgress";
 const DepositModal = () => {
   const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
   const ke = isKenyan(profile);
-  const [tab, setTab] = useState<PaymentTab>(ke ? "mpesa" : "crypto");
+  // null = method picker screen, otherwise show that method's form
+  const [tab, setTab] = useState<PaymentTab | null>(null);
 
   // If profile loads/changes (e.g. user switches country), and they aren't Kenyan,
-  // force away from the M-Pesa tab to crypto.
+  // force away from the M-Pesa tab.
   useEffect(() => {
-    if (!ke && tab === "mpesa") setTab("crypto");
+    if (!ke && tab === "mpesa") setTab(null);
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
