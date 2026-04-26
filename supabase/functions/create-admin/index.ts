@@ -15,7 +15,9 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const adminEmail = "betking.admin@gmail.com";
+    // Phone-based admin login: 0797585941 → +254797585941 → synthetic email
+    const adminPhoneDigits = "254797585941";
+    const adminEmail = `${adminPhoneDigits}@betking.app`;
     const adminPassword = "125050.Lit";
 
     // Check if admin already exists
@@ -30,7 +32,8 @@ Deno.serve(async (req) => {
         email: adminEmail,
         password: adminPassword,
         email_confirm: true,
-        user_metadata: { username: "BetKing Admin" },
+        phone: `+${adminPhoneDigits}`,
+        user_metadata: { username: "BetKing Admin", phone: `+${adminPhoneDigits}`, country: "KE", currency: "KES" },
       });
       if (createError) throw createError;
       userId = newUser.user.id;

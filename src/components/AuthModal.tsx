@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, Mail, Lock, User, Gift, Phone, Globe } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { X, Lock, User, Gift, Phone, Globe } from "lucide-react";
+import { useAuth, phoneToSyntheticEmail } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 
@@ -25,7 +25,6 @@ const AuthModal = () => {
   const { showAuthModal, setShowAuthModal, login, signup } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -44,12 +43,19 @@ const AuthModal = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phone.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
     setSubmitting(true);
     try {
+      const fullPhone = `${selectedCountry.dial}${phone.replace(/^0+/, "")}`;
+      const syntheticEmail = phoneToSyntheticEmail(fullPhone);
+
       if (isLogin) {
-        const result = await login(email, password);
+        const result = await login(syntheticEmail, password);
         if (result.error) {
-          toast.error(result.error);
+          toast.error("Invalid phone number or password");
         } else {
           toast.success("Welcome back!");
           setShowAuthModal(false);
@@ -61,8 +67,7 @@ const AuthModal = () => {
           setSubmitting(false);
           return;
         }
-        const fullPhone = phone ? `${selectedCountry.dial}${phone.replace(/^0+/, "")}` : undefined;
-        const result = await signup(username, email, password, referralCode || undefined, fullPhone, country, selectedCountry.currency);
+        const result = await signup(username, syntheticEmail, password, referralCode || undefined, fullPhone, country, selectedCountry.currency);
         if (result.error) {
           toast.error(result.error);
         } else {
@@ -78,7 +83,6 @@ const AuthModal = () => {
 
   const resetForm = () => {
     setUsername("");
-    setEmail("");
     setPhone("");
     setPassword("");
     setReferralCode("");
@@ -127,36 +131,25 @@ const AuthModal = () => {
                   ))}
                 </select>
               </div>
-
-              {/* Phone Number */}
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <div className="flex">
-                  <span className="bg-secondary border border-border border-r-0 rounded-l-md px-3 py-3 text-sm text-muted-foreground flex items-center min-w-[70px]">
-                    {selectedCountry.dial}
-                  </span>
-                  <input
-                    type="tel"
-                    placeholder="Phone number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                    className="w-full bg-secondary border border-border rounded-r-md px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-                  />
-                </div>
-              </div>
             </>
           )}
 
+          {/* Phone Number — used as the login identifier */}
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-              required
-            />
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="flex">
+              <span className="bg-secondary border border-border border-r-0 rounded-l-md px-3 py-3 text-sm text-muted-foreground flex items-center min-w-[70px]">
+                {selectedCountry.dial}
+              </span>
+              <input
+                type="tel"
+                placeholder="Phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                className="w-full bg-secondary border border-border rounded-r-md px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
+                required
+              />
+            </div>
           </div>
 
           <div className="relative">

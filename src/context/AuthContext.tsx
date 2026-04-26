@@ -16,8 +16,8 @@ interface AuthContextType {
   profile: ProfileData | null;
   isLoggedIn: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ error?: string }>;
-  signup: (username: string, email: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string) => Promise<{ error?: string }>;
+  login: (phoneOrEmail: string, password: string) => Promise<{ error?: string }>;
+  signup: (username: string, phoneOrEmail: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   deposit: (amount: number) => Promise<boolean>;
   withdraw: (amount: number) => Promise<boolean>;
@@ -28,6 +28,13 @@ interface AuthContextType {
   showDepositModal: boolean;
   setShowDepositModal: (v: boolean) => void;
 }
+
+// Convert a phone-style identifier to a synthetic email used by Supabase auth.
+// Accepts inputs like "+254797585941", "254797585941", "0797585941" with a country dial code.
+export const phoneToSyntheticEmail = (fullPhoneE164: string) => {
+  const digits = fullPhoneE164.replace(/\D/g, "");
+  return `${digits}@betking.app`;
+};
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
