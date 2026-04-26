@@ -114,11 +114,11 @@ const BetHistory = () => {
                 <div className="flex items-center justify-between pt-2 border-t border-border text-sm">
                   <div>
                     <span className="text-muted-foreground">Stake: </span>
-                    <span className="font-medium">${bet.stake.toFixed(2)}</span>
+                    <span className="font-medium">{formatMoney(bet.stake, profile)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Potential Win: </span>
-                    <span className="font-bold text-accent">${bet.potential_win.toFixed(2)}</span>
+                    <span className="font-bold text-accent">{formatMoney(bet.potential_win, profile)}</span>
                   </div>
                 </div>
               </div>
