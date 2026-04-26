@@ -37,13 +37,10 @@ type DepositPhase =
 
 // Live 3-step progress indicator. State derived from the current deposit phase.
 type ProgressStatus = "done" | "active" | "pending" | "failed";
-const DepositProgress = ({
-  phase,
-  method,
-}: {
+const DepositProgress = forwardRef<HTMLDivElement, {
   phase: DepositPhase;
   method: "mpesa" | "crypto";
-}) => {
+}>(({ phase, method }, ref) => {
   const labels = method === "mpesa"
     ? ["STK Sent", "Awaiting PIN", "Funds Credited"]
     : ["Address Issued", "Awaiting Transfer", "Funds Credited"];
