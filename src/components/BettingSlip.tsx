@@ -3,6 +3,7 @@ import { useBetting } from "@/context/BettingContext";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
+import { formatMoney, currencySymbol, isKenyan } from "@/lib/currency";
 
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
@@ -45,7 +46,7 @@ const BettingSlipContent = () => {
 
     if (ok) {
       toast.success(
-        `${betType} placed! $${stake.toFixed(2)} on ${selections.length} selection(s) — Potential win: $${potentialWin.toFixed(2)}`
+        `${betType} placed! ${formatMoney(stake, profile)} on ${selections.length} selection(s) — Potential win: ${formatMoney(potentialWin, profile)}`
       );
       clearAll();
     } else {
@@ -80,7 +81,9 @@ const BettingSlipContent = () => {
     }
   };
 
-  const quickStakes = [5, 10, 25, 50, 100];
+  const ke = isKenyan(profile);
+  const quickStakes = ke ? [50, 100, 250, 500, 1000] : [5, 10, 25, 50, 100];
+  const sym = currencySymbol(profile);
 
   return (
     <div className="flex flex-col h-full">
@@ -171,13 +174,13 @@ const BettingSlipContent = () => {
                 stake === qs ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-muted"
               }`}
             >
-              ${qs}
+              {ke ? `${qs}` : `$${qs}`}
             </button>
           ))}
         </div>
 
         <div className="flex items-center bg-secondary rounded-md overflow-hidden">
-          <span className="text-xs text-muted-foreground px-3">$</span>
+          <span className="text-xs text-muted-foreground px-3 font-bold">{sym}</span>
           <input
             type="number"
             value={stake}
@@ -190,13 +193,13 @@ const BettingSlipContent = () => {
         {isLoggedIn && profile && (
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Balance</span>
-            <span className="font-medium text-foreground">${profile.balance.toFixed(2)}</span>
+            <span className="font-medium text-foreground">{formatMoney(profile.balance, profile)}</span>
           </div>
         )}
 
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Potential Win</span>
-          <span className="font-bold text-accent">{potentialWin > 0 ? `$${potentialWin.toFixed(2)}` : "—"}</span>
+          <span className="font-bold text-accent">{potentialWin > 0 ? formatMoney(potentialWin, profile) : "—"}</span>
         </div>
 
         <button

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Smartphone, Bitcoin, Copy, Check, Loader2, CreditCard, Landmark, Lock, Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { isKenyan } from "@/lib/currency";
 
 type PaymentTab = "mpesa" | "crypto" | "card" | "bank" | "airtel" | "paypal";
 
@@ -16,8 +17,8 @@ const cryptoCurrencies = [
 const presetAmountsKES = [100, 250, 500, 1000, 2500, 5000];
 const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
 
-const tabs: { key: PaymentTab; label: string; icon: any; active: boolean }[] = [
-  { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: true },
+const buildTabs = (mpesaActive: boolean): { key: PaymentTab; label: string; icon: any; active: boolean }[] => [
+  { key: "mpesa", label: "M-Pesa", icon: Smartphone, active: mpesaActive },
   { key: "crypto", label: "Crypto", icon: Bitcoin, active: true },
   { key: "airtel", label: "Airtel", icon: Smartphone, active: false },
   { key: "card", label: "Card", icon: CreditCard, active: false },
@@ -26,8 +27,15 @@ const tabs: { key: PaymentTab; label: string; icon: any; active: boolean }[] = [
 ];
 
 const DepositModal = () => {
-  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile } = useAuth();
-  const [tab, setTab] = useState<PaymentTab>("mpesa");
+  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
+  const ke = isKenyan(profile);
+  const [tab, setTab] = useState<PaymentTab>(ke ? "mpesa" : "crypto");
+
+  // If profile loads/changes (e.g. user switches country), and they aren't Kenyan,
+  // force away from the M-Pesa tab to crypto.
+  useEffect(() => {
+    if (!ke && tab === "mpesa") setTab("crypto");
+  }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [mpesaAmount, setMpesaAmount] = useState(500);
@@ -54,6 +62,11 @@ const DepositModal = () => {
 
   const handleMpesaDeposit = async () => {
     if (!isLoggedIn || !user) { setShowDepositModal(false); setShowAuthModal(true); return; }
+    if (!ke) {
+      toast.error("M-Pesa is only available for Kenyan accounts. Please use Crypto instead.");
+      setTab("crypto");
+      return;
+    }
     if (mpesaAmount < 10) { toast.error("Minimum deposit is KES 10"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
 
@@ -144,7 +157,7 @@ const DepositModal = () => {
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-6 border-b border-border overflow-x-auto">
-          {tabs.map((t) => (
+          {buildTabs(ke).map((t) => (
             <button
               key={t.key}
               onClick={() => t.active ? setTab(t.key) : null}
