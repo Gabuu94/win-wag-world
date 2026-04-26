@@ -311,6 +311,97 @@ const BettingSlipContent = () => {
           {!isLoggedIn ? "Sign In to Bet" : `Place ${betType}`}
         </button>
       </div>
+
+      {/* Load Code Dialog */}
+      <Dialog open={loadOpen} onOpenChange={setLoadOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-wider">Load Betslip Code</DialogTitle>
+            <DialogDescription>
+              Enter the 6-character code shared with you to load the same selections.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <input
+              autoFocus
+              value={codeInput}
+              onChange={(e) => onCodeInputChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleLoadCode();
+              }}
+              placeholder="ABC123"
+              maxLength={CODE_LENGTH}
+              inputMode="text"
+              autoComplete="off"
+              spellCheck={false}
+              className={`w-full bg-secondary text-foreground text-center text-2xl font-mono font-bold tracking-[0.5em] py-3 rounded-md outline-none border-2 transition ${
+                loadError ? "border-destructive" : "border-transparent focus:border-primary"
+              }`}
+            />
+
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Letters & numbers only</span>
+              <span className={codeInput.length === CODE_LENGTH ? "text-primary font-bold" : ""}>
+                {codeInput.length}/{CODE_LENGTH}
+              </span>
+            </div>
+
+            {loadError && (
+              <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{loadError}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLoadCode}
+              disabled={loading || codeInput.length !== CODE_LENGTH}
+              className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading…</> : "Load Selections"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Code Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-wider">Share Your Betslip</DialogTitle>
+            <DialogDescription>
+              Share this 6-character code. Anyone can paste it into "Load betslip code" to get your exact selections.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sharing || !shareCode ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-3 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm">Generating code…</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="bg-secondary border-2 border-primary/30 rounded-md py-5 text-center">
+                <p className="font-mono text-3xl font-bold tracking-[0.5em] text-primary select-all">
+                  {shareCode}
+                </p>
+              </div>
+
+              <button
+                onClick={copyShareCode}
+                className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition flex items-center justify-center gap-2"
+              >
+                {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Code</>}
+              </button>
+
+              <p className="text-[11px] text-muted-foreground text-center">
+                {selections.length} selection(s) • Total odds {totalOdds.toFixed(2)}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
