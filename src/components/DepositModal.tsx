@@ -64,7 +64,7 @@ const DepositProgress = forwardRef<HTMLDivElement, {
     "bg-accent/15 text-accent border-accent/30";
 
   return (
-    <div className="bg-secondary/50 border border-border rounded-md p-3 space-y-3">
+    <div ref={ref} className="bg-secondary/50 border border-border rounded-md p-3 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Deposit Progress</span>
         <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
