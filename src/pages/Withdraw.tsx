@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { formatMoney } from "@/lib/currency";
 import {
   Dialog,
   DialogContent,
@@ -97,7 +98,7 @@ const Withdraw = () => {
         {/* Balance */}
         <div className="bg-card border border-border rounded-lg p-4 mb-4 text-center">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Available Balance</p>
-          <p className="text-2xl font-bold text-primary mt-1">${profile?.balance.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-primary mt-1">{formatMoney(profile?.balance ?? 0, profile)}</p>
         </div>
 
         {/* Tabs */}
