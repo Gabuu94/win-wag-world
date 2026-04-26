@@ -384,30 +384,14 @@ const DepositModal = () => {
           </button>
         </div>
 
-        {/* Tabs only visible in form phase */}
-        {!isOverlayPhase && (
-          <div className="grid grid-cols-3 sm:grid-cols-6 border-b border-border overflow-x-auto">
-            {buildTabs(ke).map((t) => (
-              <button
-                key={t.key}
-                onClick={() => t.active ? setTab(t.key) : null}
-                disabled={!t.active}
-                className={`flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-wider transition relative ${
-                  tab === t.key && t.active
-                    ? "text-primary border-b-2 border-primary bg-primary/5"
-                    : t.active
-                    ? "text-muted-foreground hover:text-foreground"
-                    : "text-muted-foreground/40 cursor-not-allowed"
-                }`}
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-                {!t.active && (
-                  <span className="absolute top-1 right-1 text-[7px] bg-muted text-muted-foreground px-1 rounded">Soon</span>
-                )}
-              </button>
-            ))}
-          </div>
+        {/* Back button to method picker (only when a method is chosen and still in form phase) */}
+        {!isOverlayPhase && tab !== null && (
+          <button
+            onClick={() => setTab(null)}
+            className="flex items-center gap-1.5 px-4 pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Payment methods
+          </button>
         )}
 
         <div className="p-6 space-y-5">
