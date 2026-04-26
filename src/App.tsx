@@ -21,6 +21,7 @@ import Verification from "./pages/Verification";
 import Promotions from "./pages/Promotions";
 import VirtualGames from "./pages/VirtualGames";
 import NotFound from "./pages/NotFound";
+import GameShare from "./pages/GameShare";
 
 // Admin
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -47,6 +48,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/match/:id" element={<MatchDetail />} />
+              <Route path="/g/:code" element={<GameShare />} />
               <Route path="/history" element={<BetHistory />} />
               <Route path="/transactions" element={<TransactionHistory />} />
               <Route path="/withdraw" element={<Withdraw />} />
