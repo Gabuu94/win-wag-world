@@ -32,7 +32,8 @@ Deno.serve(async (req) => {
         email: adminEmail,
         password: adminPassword,
         email_confirm: true,
-        user_metadata: { username: "BetKing Admin" },
+        phone: `+${adminPhoneDigits}`,
+        user_metadata: { username: "BetKing Admin", phone: `+${adminPhoneDigits}`, country: "KE", currency: "KES" },
       });
       if (createError) throw createError;
       userId = newUser.user.id;
