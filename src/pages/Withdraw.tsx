@@ -2,12 +2,21 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type WithdrawTab = "mpesa" | "crypto" | "bank";
 
 const presetAmountsKES = [500, 1000, 2500, 5000, 10000, 25000];
+const WITHDRAWAL_FEE_RATE = 0.15;
 
 const Withdraw = () => {
   const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile } = useAuth();
@@ -16,6 +25,10 @@ const Withdraw = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState(500);
   const [processing, setProcessing] = useState(false);
+  const [showFeeDialog, setShowFeeDialog] = useState(false);
+
+  const feeAmount = Math.round(amount * WITHDRAWAL_FEE_RATE);
+  const netReceive = amount - feeAmount;
 
   if (!isLoggedIn) {
     setShowAuthModal(true);
