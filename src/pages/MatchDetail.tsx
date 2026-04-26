@@ -44,6 +44,7 @@ const MatchDetail = () => {
   const [markets, setMarkets] = useState<Record<string, MarketOdd[]>>({});
   const [adminMarkets, setAdminMarkets] = useState<AdminMarket[]>([]);
   const [marketsLoading, setMarketsLoading] = useState(false);
+  // Default: expand match_result/moneyline. For admin custom games we expand ALL markets after fetch.
   const [expandedMarkets, setExpandedMarkets] = useState<Set<string>>(new Set(["moneyline", "match_result"]));
   const [liveGame, setLiveGame] = useState<any>(null);
 
