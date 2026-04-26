@@ -72,7 +72,7 @@ const NotificationBell = () => {
   };
 
   if (!isLoggedIn) return (
-    <button className="hidden sm:flex items-center text-muted-foreground hover:text-foreground transition">
+    <button className="flex items-center text-muted-foreground hover:text-foreground transition">
       <Bell className="w-5 h-5" />
     </button>
   );
@@ -81,7 +81,7 @@ const NotificationBell = () => {
     <div className="relative" ref={ref}>
       <button
         onClick={() => { setOpen(!open); if (!open) markAllRead(); }}
-        className="hidden sm:flex items-center text-muted-foreground hover:text-foreground transition relative"
+        className="flex items-center text-muted-foreground hover:text-foreground transition relative"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -92,7 +92,7 @@ const NotificationBell = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 w-80 bg-card border border-border rounded-xl shadow-xl z-[120] overflow-hidden">
+        <div className="absolute right-0 top-10 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-card border border-border rounded-xl shadow-xl z-[120] overflow-hidden">
           <div className="flex items-center justify-between p-3 border-b border-border">
             <h3 className="font-bold text-sm">Notifications</h3>
             {unreadCount > 0 && (
