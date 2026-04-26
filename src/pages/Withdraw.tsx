@@ -35,11 +35,20 @@ const Withdraw = () => {
     return null;
   }
 
-  const handleMpesaWithdraw = async () => {
+  const validateAndOpenFeeDialog = () => {
     if (!user || !profile) return;
     if (amount < 50) { toast.error("Minimum withdrawal is KES 50"); return; }
     if (amount > profile.balance) { toast.error("Insufficient balance"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter valid M-Pesa number"); return; }
+    setShowFeeDialog(true);
+  };
+
+  const handleMpesaWithdraw = async () => {
+    if (!user || !profile) return;
+    if (profile.balance < feeAmount) {
+      toast.error("Insufficient balance to cover the 15% fee. Please deposit first.");
+      return;
+    }
 
     setProcessing(true);
     try {
