@@ -373,7 +373,19 @@ const DepositModal = () => {
         body: { amount_usd: cryptoAmount, currency: selectedCrypto, user_id: user.id },
       });
 
+      // Try to parse structured error body (e.g. minimum-amount validation)
+      let errBody: any = null;
+      if (error && (error as any).context?.json) {
+        try { errBody = await (error as any).context.json(); } catch { /* ignore */ }
+      }
+
+      if (errBody?.error) {
+        toast.error(errBody.error);
+        if (errBody.min_usd) setCryptoAmount(Math.max(cryptoAmount, Math.ceil(errBody.min_usd)));
+        return;
+      }
       if (error) throw error;
+
       if (data?.success) {
         setPhase({
           kind: "crypto-pending",
