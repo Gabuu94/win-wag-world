@@ -78,7 +78,7 @@ const BettingSlipContent = () => {
         .insert({
           code,
           selections: selections as any,
-          created_by: profile?.user_id ?? null,
+          created_by: user?.id ?? null,
         });
       if (!error) {
         await navigator.clipboard.writeText(code);
