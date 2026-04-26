@@ -174,7 +174,7 @@ const BettingSlipContent = () => {
                 stake === qs ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-muted"
               }`}
             >
-              ${qs}
+              {ke ? `${qs}` : `$${qs}`}
             </button>
           ))}
         </div>
