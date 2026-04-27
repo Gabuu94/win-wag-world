@@ -587,7 +587,7 @@ const DepositModal = () => {
                 <div className="relative mb-3">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">$</span>
                   <input type="number" value={cryptoAmount} onChange={(e) => setCryptoAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={5} />
+                    className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={50} />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {presetAmountsUSD.map((a) => (
