@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface BetRow {
   id: string;
-  selections: { matchLabel: string; pick: string; odds: number }[];
+  selections: { matchLabel: string; pick: string; odds: number; status?: string }[];
   stake: number;
   total_odds: number;
   potential_win: number;
