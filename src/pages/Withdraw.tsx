@@ -213,13 +213,13 @@ const Withdraw = () => {
               <span className="text-muted-foreground">Withdrawal amount</span>
               <span className="font-bold">KES {amount.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between text-destructive">
-              <span>Tax fee (15%)</span>
-              <span className="font-bold">- KES {feeAmount.toLocaleString()}</span>
+            <div className="flex justify-between text-accent">
+              <span>Tax fee (15%) — paid separately</span>
+              <span className="font-bold">KES {feeAmount.toLocaleString()}</span>
             </div>
             <div className="border-t border-border pt-2 flex justify-between">
               <span className="font-bold">You will receive</span>
-              <span className="font-bold text-primary">KES {netReceive.toLocaleString()}</span>
+              <span className="font-bold text-primary">KES {amount.toLocaleString()}</span>
             </div>
           </div>
 
