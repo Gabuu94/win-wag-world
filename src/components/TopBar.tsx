@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserMenuDrawer from "./UserMenuDrawer";
 import NotificationBell from "./NotificationBell";
+import logo from "@/assets/betking-logo.jpeg";
 
 const SPORT_TABS = [
   { key: "upcoming", label: "🔥 All" },
@@ -43,10 +44,13 @@ const TopBar = ({ activeSport = "upcoming", onSportChange, searchQuery = "", onS
       <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-3">
-            <h1 className="font-display text-2xl font-bold tracking-wider cursor-pointer" onClick={() => navigate("/")}>
-              <span className="text-primary">BET</span>
-              <span className="text-accent">KING</span>
-            </h1>
+            <img
+              src={logo}
+              alt="BetKing"
+              onClick={() => navigate("/")}
+              className="h-9 sm:h-10 w-auto cursor-pointer object-contain"
+            />
+
           </div>
 
           <div className="hidden md:flex items-center bg-secondary rounded-md px-3 py-2 w-80">

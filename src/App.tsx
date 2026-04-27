@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import DepositModal from "@/components/DepositModal";
 import ChatSupport from "@/components/ChatSupport";
+import SplashScreen from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import MatchDetail from "./pages/MatchDetail";
 import BetHistory from "./pages/BetHistory";
@@ -40,6 +41,7 @@ const App = () => (
       <AuthProvider>
         <BettingProvider>
           <TooltipProvider>
+            <SplashScreen />
             <Toaster />
             <Sonner />
             <AuthModal />
