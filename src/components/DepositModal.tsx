@@ -598,7 +598,7 @@ const DepositModal = () => {
                   ))}
                 </div>
               </div>
-              <button onClick={handleCryptoDeposit} disabled={cryptoProcessing || cryptoAmount < 5}
+              <button onClick={handleCryptoDeposit} disabled={cryptoProcessing || cryptoAmount < 50}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {cryptoProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating Address...</> : `Deposit $${cryptoAmount} via ${cryptoCurrencies.find((c) => c.id === selectedCrypto)?.symbol}`}
               </button>
