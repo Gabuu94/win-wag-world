@@ -190,17 +190,10 @@ const AuthModal = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (!phone.trim()) {
-                    toast.error("Enter your phone number first, then click Forgot Password");
-                    return;
-                  }
-                  const fullPhone = `${selectedCountry.dial}${phone.replace(/^0+/, "")}`;
-                  const msg = `Password reset request for phone: ${fullPhone}`;
-                  sessionStorage.setItem("betking_support_prefill", msg);
                   setShowAuthModal(false);
-                  resetForm();
-                  toast.info("Opening support chat to request a password reset...");
-                  window.dispatchEvent(new CustomEvent("betking:open-support", { detail: { message: msg } }));
+                  window.dispatchEvent(new CustomEvent("betking:open-forgot-password", {
+                    detail: { dial: selectedCountry.dial, phone },
+                  }));
                 }}
                 className="text-xs text-muted-foreground hover:text-primary transition"
               >

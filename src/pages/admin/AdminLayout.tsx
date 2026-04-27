@@ -4,7 +4,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard, Users, Receipt, MessageCircle, Gamepad2, 
-  Gift, LogOut, Menu, X, ChevronRight
+  Gift, LogOut, Menu, X, ChevronRight, KeyRound
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { path: "/admin/support", label: "Support Chat", icon: MessageCircle },
   { path: "/admin/games", label: "Game Manager", icon: Gamepad2 },
   { path: "/admin/promotions", label: "Promotions", icon: Gift },
+  { path: "/admin/password-resets", label: "Password Resets", icon: KeyRound },
 ];
 
 const AdminLayout = () => {
