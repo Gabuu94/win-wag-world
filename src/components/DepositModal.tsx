@@ -187,7 +187,7 @@ const DepositModal = () => {
   const [mpesaAmount, setMpesaAmount] = useState(1000);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
 
-  const [cryptoAmount, setCryptoAmount] = useState(25);
+  const [cryptoAmount, setCryptoAmount] = useState(50);
   const [selectedCrypto, setSelectedCrypto] = useState("btc");
   const [cryptoProcessing, setCryptoProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
