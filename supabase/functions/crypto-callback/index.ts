@@ -2,8 +2,40 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-nowpayments-sig',
 };
+
+// Sort object keys recursively (NOWPayments requires sorted JSON for HMAC)
+function sortObject(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(sortObject);
+  if (obj && typeof obj === 'object') {
+    return Object.keys(obj).sort().reduce((acc: any, key) => {
+      acc[key] = sortObject(obj[key]);
+      return acc;
+    }, {});
+  }
+  return obj;
+}
+
+async function verifySignature(rawBody: string, signature: string, secret: string): Promise<boolean> {
+  try {
+    const parsed = JSON.parse(rawBody);
+    const sortedJson = JSON.stringify(sortObject(parsed));
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-512' },
+      false,
+      ['sign'],
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(sortedJson));
+    const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex === signature.toLowerCase();
+  } catch (e) {
+    console.error('Signature verification error:', e);
+    return false;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +43,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-nowpayments-sig');
+    const ipnSecret = Deno.env.get('NOWPAYMENTS_IPN_SECRET');
+
+    // Verify HMAC signature when secret is configured
+    if (ipnSecret) {
+      if (!signature) {
+        console.warn('Missing x-nowpayments-sig header');
+        return new Response(JSON.stringify({ error: 'Missing signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const valid = await verifySignature(rawBody, signature, ipnSecret);
+      if (!valid) {
+        console.warn('Invalid IPN signature');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    const body = JSON.parse(rawBody);
     console.log('Crypto callback received:', JSON.stringify(body));
 
     const { payment_status, order_id, price_amount } = body;
@@ -39,7 +94,6 @@ Deno.serve(async (req) => {
             .update({ balance: newBalance })
             .eq('user_id', user_id);
 
-          // Record completed transaction
           await supabase.from('transactions').insert({
             user_id,
             type: 'deposit',
