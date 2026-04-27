@@ -562,7 +562,7 @@ const DepositModal = () => {
                   ))}
                 </div>
               </div>
-              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < 10 || !phoneNumber}
+              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < 1000 || !phoneNumber}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {mpesaProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending STK Push...</> : `Deposit KES ${mpesaAmount.toLocaleString()}`}
               </button>
