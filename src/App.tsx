@@ -16,7 +16,7 @@ import BetHistory from "./pages/BetHistory";
 import TransactionHistory from "./pages/TransactionHistory";
 import Withdraw from "./pages/Withdraw";
 import Settings from "./pages/Settings";
-import Referral from "./pages/Referral";
+
 import VIP from "./pages/VIP";
 import Voucher from "./pages/Voucher";
 import Verification from "./pages/Verification";
@@ -58,7 +58,7 @@ const App = () => (
               <Route path="/transactions" element={<TransactionHistory />} />
               <Route path="/withdraw" element={<Withdraw />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/referral" element={<Referral />} />
+              
               <Route path="/vip" element={<VIP />} />
               <Route path="/voucher" element={<Voucher />} />
               <Route path="/verification" element={<Verification />} />

@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import { X, Lock, User, Gift, Phone, Globe } from "lucide-react";
+import { useState } from "react";
+import { X, Lock, User, Phone, Globe } from "lucide-react";
 import { useAuth, phoneToSyntheticEmail } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
 
 const COUNTRIES = [
   { code: "KE", name: "Kenya", dial: "+254", currency: "KES", flag: "🇰🇪" },
@@ -27,15 +26,8 @@ const AuthModal = () => {
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [referralCode, setReferralCode] = useState("");
   const [country, setCountry] = useState("KE");
   const [submitting, setSubmitting] = useState(false);
-  const [searchParams] = useSearchParams();
-
-  useEffect(() => {
-    const refCode = searchParams.get("ref");
-    if (refCode) setReferralCode(refCode);
-  }, [searchParams]);
 
   if (!showAuthModal) return null;
 
@@ -67,7 +59,7 @@ const AuthModal = () => {
           setSubmitting(false);
           return;
         }
-        const result = await signup(username, syntheticEmail, password, referralCode || undefined, fullPhone, country, selectedCountry.currency);
+        const result = await signup(username, syntheticEmail, password, undefined, fullPhone, country, selectedCountry.currency);
         if (result.error) {
           toast.error(result.error);
         } else {
@@ -85,7 +77,6 @@ const AuthModal = () => {
     setUsername("");
     setPhone("");
     setPassword("");
-    setReferralCode("");
   };
 
   return (
@@ -165,18 +156,6 @@ const AuthModal = () => {
             />
           </div>
 
-          {!isLogin && (
-            <div className="relative">
-              <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Referral code (optional)"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-              />
-            </div>
-          )}
           <button
             type="submit"
             disabled={submitting}
