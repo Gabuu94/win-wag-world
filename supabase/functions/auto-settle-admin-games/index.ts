@@ -180,30 +180,46 @@ async function settleGame(supabase: any, game: any) {
     const sels = (bet.selections as any[]) || [];
     const matched = sels.filter(selectionMatchesGame);
     if (matched.length === 0) continue;
-    const others = sels.filter((s) => !selectionMatchesGame(s));
-    if (others.length > 0) continue; // leave for the other game's settlement
 
-    const allWon = matched.every(isWinningSelection);
-    const newStatus = allWon ? "won" : "lost";
-    await supabase.from("bets").update({ status: newStatus }).eq("id", bet.id);
-    if (allWon) {
+    // Tag each leg of THIS game with its individual win/loss; keep prior leg statuses.
+    const updatedSels = sels.map((s: any) => {
+      if (!selectionMatchesGame(s)) return s;
+      return { ...s, status: isWinningSelection(s) ? "won" : "lost" };
+    });
+
+    const anyMatchedLost = matched.some((s: any) => !isWinningSelection(s));
+    const allLegsResolved = updatedSels.every((s: any) => s.status === "won" || s.status === "lost");
+    const allLegsWon = allLegsResolved && updatedSels.every((s: any) => s.status === "won");
+
+    // Determine overall status: lost as soon as any leg loses; won only when all legs resolved & won; else stays pending.
+    const finalStatus = anyMatchedLost
+      ? "lost"
+      : allLegsWon
+        ? "won"
+        : "pending";
+
+    await supabase.from("bets").update({ selections: updatedSels, status: finalStatus }).eq("id", bet.id);
+
+    if (finalStatus === "won") {
       const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", bet.user_id).single();
       if (profile) {
         await supabase.from("profiles").update({ balance: Number(profile.balance) + Number(bet.potential_win) }).eq("user_id", bet.user_id);
       }
       await supabase.from("notifications").insert({
         user_id: bet.user_id, title: "Bet Won! 🎉",
-        message: `Your bet on ${matchLabel} won ${Number(bet.potential_win).toFixed(2)}!`,
+        message: `Your bet won ${Number(bet.potential_win).toFixed(2)}!`,
         type: "win",
       });
-    } else {
+      settled++;
+    } else if (finalStatus === "lost") {
       await supabase.from("notifications").insert({
         user_id: bet.user_id, title: "Bet Lost",
         message: `Your bet on ${matchLabel} did not win. Better luck next time!`,
         type: "loss",
       });
+      settled++;
     }
-    settled++;
+    // else: pending — waiting on other games' legs
   }
   return { settled };
 }
