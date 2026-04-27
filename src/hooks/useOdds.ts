@@ -218,10 +218,26 @@ export function useOdds(sportKey: string = "upcoming") {
         // Don't list cancelled/finished games in the upcoming/live feeds
         if (explicitlyFinished) return null;
 
-        // Estimate live minute if admin hasn't manually set it
+        // Estimate live minute, accounting for a 15-minute halftime break.
+        // Football is 90 playing minutes split 45 + 15 break + 45.
+        // Total real elapsed time at full-time = 105 min.
         let liveMinute = g.current_minute || 0;
-        if (isLive && (!liveMinute || liveMinute === 0)) {
-          liveMinute = Math.max(1, Math.floor((now - commence.getTime()) / 60000));
+        let displayPeriod = g.current_period;
+        if (isLive) {
+          const elapsedMin = (now - commence.getTime()) / 60000;
+          if (elapsedMin < 45) {
+            liveMinute = Math.max(1, Math.floor(elapsedMin));
+            displayPeriod = "first_half";
+          } else if (elapsedMin < 60) {
+            liveMinute = 45; // freeze the clock during the break
+            displayPeriod = "half_time";
+          } else if (elapsedMin < 105) {
+            liveMinute = Math.min(90, 45 + Math.floor(elapsedMin - 60));
+            displayPeriod = "second_half";
+          } else {
+            liveMinute = 90;
+            displayPeriod = "second_half";
+          }
         }
 
         return {
@@ -230,7 +246,9 @@ export function useOdds(sportKey: string = "upcoming") {
           sport: g.sport,
           team1: g.home_team,
           team2: g.away_team,
-          time: isLive ? `${liveMinute}'` : getTimeUntil(commence),
+          time: isLive
+            ? (displayPeriod === "half_time" ? "HT" : `${liveMinute}'`)
+            : getTimeUntil(commence),
           localTime: formatLocal(commence),
           providerTime: formatProvider(commence, "UTC"),
           providerTimezone: "UTC",
@@ -242,7 +260,7 @@ export function useOdds(sportKey: string = "upcoming") {
           // those values up front and revealing them would spoil the outcome. Only show
           // period & minute on live cards; the score stays hidden until status === "finished"
           // (and finished games are filtered out of the feed above anyway).
-          gameState: isLive ? { home_score: null, away_score: null, period: g.current_period, minute: liveMinute } : null,
+          gameState: isLive ? { home_score: null, away_score: null, period: displayPeriod, minute: liveMinute } : null,
         };
       }).filter(Boolean) as NormalizedMatch[];
 
@@ -323,18 +341,21 @@ export function useOdds(sportKey: string = "upcoming") {
   }, [fetchOdds]);
 
   useEffect(() => {
-    // Poll every 15s when a match is live (per SportMonks), otherwise every 30s.
-    const pollMs = hasLive ? 15000 : 30000;
+    // Poll every 10s when a match is live, otherwise every 30s.
+    const pollMs = hasLive ? 10000 : 30000;
     const interval = setInterval(() => {
       void fetchOdds(true);
     }, pollMs);
 
+    // Refresh display time every 10s so the live minute / HT label stays in sync.
     const timeInterval = setInterval(() => {
       setMatches((prev) =>
         prev.map((m) => ({
           ...m,
           time: m.isLive
-            ? (typeof m.gameState?.minute === "number" ? `${m.gameState.minute}'` : "LIVE")
+            ? (m.gameState?.period === "half_time"
+                ? "HT"
+                : (typeof m.gameState?.minute === "number" ? `${m.gameState.minute}'` : "LIVE"))
             : getTimeUntil(new Date(m.commenceTime)),
         }))
       );

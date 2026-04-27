@@ -228,8 +228,8 @@ Deno.serve(async (req) => {
       started++;
     }
 
-    // 2. Advance live games through periods based on elapsed time
-    // Timeline (% of total duration): 0-45% first_half | 45-55% half_time | 55-100% second_half
+    // 2. Advance live games through periods using fixed football timing:
+    // 0–45 min real elapsed = first_half | 45–60 = half_time (15-min break) | 60+ = second_half
     const { data: liveGames } = await supabase
       .from("admin_games")
       .select("id, start_time, end_time, current_period, status")
@@ -242,10 +242,10 @@ Deno.serve(async (req) => {
       const end = new Date(g.end_time!).getTime();
       const now = Date.now();
       if (now >= end) continue; // handled by finish step below
-      const pct = (now - start) / (end - start);
+      const elapsedMin = (now - start) / 60000;
       let target: string;
-      if (pct < 0.45) target = "first_half";
-      else if (pct < 0.55) target = "half_time";
+      if (elapsedMin < 45) target = "first_half";
+      else if (elapsedMin < 60) target = "half_time";
       else target = "second_half";
 
       if (g.current_period !== target) {
