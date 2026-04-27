@@ -70,7 +70,7 @@ const MatchCard = ({ match }: MatchCardProps) => {
           }}
           className="ml-auto text-xs text-muted-foreground hover:text-primary transition"
         >
-          +{match.totalMarkets} markets
+          +{Math.max(match.totalMarkets, 17)} markets
         </button>
       </div>
     </div>

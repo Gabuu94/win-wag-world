@@ -55,47 +55,61 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const sportKey = url.searchParams.get('sport') || 'upcoming';
 
-    // Window for upcoming fixtures: tomorrow → +14d (today's games are usually
-    // already finished by the time most users browse). We additionally fetch
-    // currently in-play fixtures separately so live matches always appear.
-    const tomorrow = new Date();
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    // Window: today → +14d. Fetch 6 pages × 50 = up to 300 upcoming fixtures.
+    const today = new Date();
     const end = new Date();
     end.setUTCDate(end.getUTCDate() + 14);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
     const leagueIds = LEAGUE_MAP[sportKey] ?? [];
-    const params = new URLSearchParams();
-    params.set('api_token', TOKEN);
-    params.set('include', 'participants;league;scores;state');
-    params.set('per_page', '50');
-    if (leagueIds.length > 0) {
-      params.set('filters', `fixtureLeagues:${leagueIds.join(',')}`);
-    }
+    const buildParams = (page: number) => {
+      const p = new URLSearchParams();
+      p.set('api_token', TOKEN);
+      p.set('include', 'participants;league;scores;state');
+      p.set('per_page', '50');
+      p.set('page', String(page));
+      if (leagueIds.length > 0) p.set('filters', `fixtureLeagues:${leagueIds.join(',')}`);
+      return p;
+    };
 
-    const upcomingUrl = `${SM_BASE}/fixtures/between/${fmt(tomorrow)}/${fmt(end)}?${params}`;
+    const PAGES = 6;
+    const upcomingUrls = Array.from({ length: PAGES }, (_, i) =>
+      `${SM_BASE}/fixtures/between/${fmt(today)}/${fmt(end)}?${buildParams(i + 1)}`
+    );
     const inplayUrl = `${SM_BASE}/livescores/inplay?api_token=${TOKEN}&include=participants;league;scores;state`;
 
-    const [upResp, inResp] = await Promise.all([fetch(upcomingUrl), fetch(inplayUrl)]);
-    const resp = upResp;
+    const allResps = await Promise.all([
+      ...upcomingUrls.map((u) => fetch(u).catch(() => null)),
+      fetch(inplayUrl).catch(() => null),
+    ]);
+    const upResps = allResps.slice(0, PAGES);
+    const inResp = allResps[PAGES];
+    const firstOk = upResps.find((r) => r && r.ok) || upResps[0];
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error(`SportMonks error [${resp.status}]:`, text);
-      if (resp.status === 401 || resp.status === 403) {
-        return jsonResponse({ error: 'Invalid SportMonks API token or plan does not include this resource', fallback: true }, resp.status);
+    if (!firstOk || !firstOk.ok) {
+      const status = firstOk?.status || 502;
+      const text = firstOk ? await firstOk.text() : 'no response';
+      console.error(`SportMonks error [${status}]:`, text);
+      if (status === 401 || status === 403) {
+        return jsonResponse({ error: 'Invalid SportMonks API token or plan does not include this resource', fallback: true }, status);
       }
-      if (resp.status === 429) {
+      if (status === 429) {
         return jsonResponse({ error: 'Rate limited by SportMonks', fallback: true }, 429);
       }
-      throw new Error(`SportMonks error [${resp.status}]: ${text.slice(0, 200)}`);
+      return jsonResponse({ error: `SportMonks error [${status}]`, fallback: true }, status);
     }
 
-    const result = await resp.json();
-    const upcomingFixtures = result.data || [];
+    let upcomingFixtures: any[] = [];
+    for (const r of upResps) {
+      if (!r || !r.ok) continue;
+      try {
+        const j = await r.json();
+        if (Array.isArray(j.data)) upcomingFixtures.push(...j.data);
+      } catch { /* skip */ }
+    }
     let inplayFixtures: any[] = [];
     try {
-      if (inResp.ok) {
+      if (inResp && inResp.ok) {
         const inJson = await inResp.json();
         inplayFixtures = inJson.data || [];
       }
@@ -108,7 +122,7 @@ Deno.serve(async (req) => {
       if (seen.has(f.id)) return false;
       seen.add(f.id); return true;
     });
-    console.log(`SportMonks returned ${upcomingFixtures.length} upcoming + ${inplayFixtures.length} in-play (window ${fmt(tomorrow)} → ${fmt(end)})`);
+    console.log(`SportMonks returned ${upcomingFixtures.length} upcoming + ${inplayFixtures.length} in-play (window ${fmt(today)} → ${fmt(end)})`);
 
     const combined = fixtures.map((f: any) => {
       const participants = f.participants || [];
