@@ -341,18 +341,21 @@ export function useOdds(sportKey: string = "upcoming") {
   }, [fetchOdds]);
 
   useEffect(() => {
-    // Poll every 15s when a match is live (per SportMonks), otherwise every 30s.
-    const pollMs = hasLive ? 15000 : 30000;
+    // Poll every 10s when a match is live, otherwise every 30s.
+    const pollMs = hasLive ? 10000 : 30000;
     const interval = setInterval(() => {
       void fetchOdds(true);
     }, pollMs);
 
+    // Refresh display time every 10s so the live minute / HT label stays in sync.
     const timeInterval = setInterval(() => {
       setMatches((prev) =>
         prev.map((m) => ({
           ...m,
           time: m.isLive
-            ? (typeof m.gameState?.minute === "number" ? `${m.gameState.minute}'` : "LIVE")
+            ? (m.gameState?.period === "half_time"
+                ? "HT"
+                : (typeof m.gameState?.minute === "number" ? `${m.gameState.minute}'` : "LIVE"))
             : getTimeUntil(new Date(m.commenceTime)),
         }))
       );
