@@ -29,7 +29,6 @@ const Withdraw = () => {
   const [showFeeDialog, setShowFeeDialog] = useState(false);
 
   const feeAmount = Math.round(amount * WITHDRAWAL_FEE_RATE);
-  const netReceive = amount - feeAmount;
 
   if (!isLoggedIn) {
     setShowAuthModal(true);
