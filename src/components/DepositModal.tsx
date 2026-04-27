@@ -320,7 +320,7 @@ const DepositModal = () => {
       setTab("crypto");
       return;
     }
-    if (mpesaAmount < 10) { toast.error("Minimum deposit is KES 10"); return; }
+    if (mpesaAmount < 1000) { toast.error("Minimum deposit is KES 1,000"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
 
     setMpesaProcessing(true);
