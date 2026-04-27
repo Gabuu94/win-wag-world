@@ -26,7 +26,7 @@ const ForgotPasswordModal = () => {
 
         <div className="p-6 space-y-5">
           <p className="text-sm text-muted-foreground">
-            To reset your password, please contact our support team. We'll verify your identity and reset it as soon as possible.
+            For your security, password resets are handled manually by our support team. Please contact us through one of the channels below — we'll verify your identity and reset your password as soon as possible.
           </p>
 
           <a
