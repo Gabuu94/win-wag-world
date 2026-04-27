@@ -14,8 +14,8 @@ const cryptoCurrencies = [
   { id: "ltc", label: "Litecoin", symbol: "LTC" },
 ];
 
-const presetAmountsKES = [100, 250, 500, 1000, 2500, 5000];
-const presetAmountsUSD = [5, 10, 25, 50, 100, 250];
+const presetAmountsKES = [1000, 2000, 5000, 10000, 20000, 50000];
+const presetAmountsUSD = [50, 100, 250, 500, 1000, 2500];
 
 const STK_TIMEOUT_SECONDS = 90;
 
@@ -184,10 +184,10 @@ const DepositModal = () => {
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [mpesaAmount, setMpesaAmount] = useState(500);
+  const [mpesaAmount, setMpesaAmount] = useState(1000);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
 
-  const [cryptoAmount, setCryptoAmount] = useState(25);
+  const [cryptoAmount, setCryptoAmount] = useState(50);
   const [selectedCrypto, setSelectedCrypto] = useState("btc");
   const [cryptoProcessing, setCryptoProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -320,7 +320,7 @@ const DepositModal = () => {
       setTab("crypto");
       return;
     }
-    if (mpesaAmount < 10) { toast.error("Minimum deposit is KES 10"); return; }
+    if (mpesaAmount < 1000) { toast.error("Minimum deposit is KES 1,000"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
 
     setMpesaProcessing(true);
@@ -355,7 +355,7 @@ const DepositModal = () => {
 
   const handleCryptoDeposit = async () => {
     if (!isLoggedIn || !user) { setShowDepositModal(false); setShowAuthModal(true); return; }
-    if (cryptoAmount < 5) { toast.error("Minimum deposit is $5"); return; }
+    if (cryptoAmount < 50) { toast.error("Minimum deposit is $50"); return; }
 
     setCryptoProcessing(true);
     try {
@@ -551,7 +551,7 @@ const DepositModal = () => {
                 <div className="relative mb-3">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">KES</span>
                   <input type="number" value={mpesaAmount} onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={10} />
+                    className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={1000} />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {presetAmountsKES.map((a) => (
@@ -562,7 +562,7 @@ const DepositModal = () => {
                   ))}
                 </div>
               </div>
-              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < 10 || !phoneNumber}
+              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < 1000 || !phoneNumber}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {mpesaProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending STK Push...</> : `Deposit KES ${mpesaAmount.toLocaleString()}`}
               </button>
@@ -587,7 +587,7 @@ const DepositModal = () => {
                 <div className="relative mb-3">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">$</span>
                   <input type="number" value={cryptoAmount} onChange={(e) => setCryptoAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={5} />
+                    className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={50} />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {presetAmountsUSD.map((a) => (
@@ -598,7 +598,7 @@ const DepositModal = () => {
                   ))}
                 </div>
               </div>
-              <button onClick={handleCryptoDeposit} disabled={cryptoProcessing || cryptoAmount < 5}
+              <button onClick={handleCryptoDeposit} disabled={cryptoProcessing || cryptoAmount < 50}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {cryptoProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating Address...</> : `Deposit $${cryptoAmount} via ${cryptoCurrencies.find((c) => c.id === selectedCrypto)?.symbol}`}
               </button>
