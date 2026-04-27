@@ -184,7 +184,7 @@ const DepositModal = () => {
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [mpesaAmount, setMpesaAmount] = useState(500);
+  const [mpesaAmount, setMpesaAmount] = useState(1000);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
 
   const [cryptoAmount, setCryptoAmount] = useState(25);
