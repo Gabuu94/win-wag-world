@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { formatMoney } from "@/lib/currency";
 import {
-  X, Wallet, ArrowDownToLine, Users, Receipt, Ticket, MessageCircle,
+  X, Wallet, ArrowDownToLine, Receipt, Ticket, MessageCircle,
   ClipboardList, Settings, Crown, ShieldCheck, LogOut, Home, Trophy,
   Tv, Gamepad2, BookOpen, FileText, Lock
 } from "lucide-react";
@@ -32,7 +32,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
       case "transactions": navigate("/transactions"); onClose(); break;
       case "my-bets": navigate("/history"); onClose(); break;
       case "settings": navigate("/settings"); onClose(); break;
-      case "refer": navigate("/referral"); onClose(); break;
+      
       case "vip": navigate("/vip"); onClose(); break;
       case "promotions": navigate("/promotions"); onClose(); break;
       case "voucher": navigate("/voucher"); onClose(); break;
@@ -47,7 +47,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
     { label: "Deposit", icon: Wallet, action: "deposit", active: true, highlight: true },
     { label: "Withdrawals", icon: ArrowDownToLine, action: "withdraw", active: true },
     { label: "Promotions", icon: Ticket, action: "promotions", active: true },
-    { label: "Bring a Friend", icon: Users, action: "refer", active: true },
+    
     { label: "Transaction History", icon: Receipt, action: "transactions", active: true },
     { label: "Voucher", icon: Ticket, action: "voucher", active: true },
     { label: "Chat", icon: MessageCircle, action: "chat", active: true },
