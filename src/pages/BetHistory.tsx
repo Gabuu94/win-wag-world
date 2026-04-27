@@ -104,9 +104,16 @@ const BetHistory = () => {
                     <div key={i} className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-muted-foreground">{sel.matchLabel}</p>
-                        <p className="text-sm font-medium">{sel.pick}</p>
+                        <p className="text-sm font-medium flex items-center gap-1.5">
+                          {sel.pick}
+                          {sel.status === "won" && <span className="text-[10px] font-bold text-primary uppercase">✓ Won</span>}
+                          {sel.status === "lost" && <span className="text-[10px] font-bold text-destructive uppercase">✗ Lost</span>}
+                          {!sel.status && bet.status === "pending" && <span className="text-[10px] font-bold text-muted-foreground uppercase">• Pending</span>}
+                        </p>
                       </div>
-                      <span className="text-primary font-bold text-sm">{sel.odds.toFixed(2)}</span>
+                      <span className={`font-bold text-sm ${
+                        sel.status === "won" ? "text-primary" : sel.status === "lost" ? "text-destructive line-through" : "text-primary"
+                      }`}>{sel.odds.toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -117,8 +124,12 @@ const BetHistory = () => {
                     <span className="font-medium">{formatMoney(bet.stake, profile)}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Potential Win: </span>
-                    <span className="font-bold text-accent">{formatMoney(bet.potential_win, profile)}</span>
+                    <span className="text-muted-foreground">
+                      {bet.status === "won" ? "Won: " : bet.status === "lost" ? "Lost: " : "Potential Win: "}
+                    </span>
+                    <span className={`font-bold ${
+                      bet.status === "won" ? "text-primary" : bet.status === "lost" ? "text-destructive" : "text-accent"
+                    }`}>{formatMoney(bet.potential_win, profile)}</span>
                   </div>
                 </div>
               </div>
