@@ -93,8 +93,10 @@ Deno.serve(async (req) => {
       if (status === 401 || status === 403) {
         return jsonResponse({ error: 'Invalid SportMonks API token or plan does not include this resource', fallback: true }, status);
       }
-      if (status === 429) {
-        return jsonResponse({ error: 'Rate limited by SportMonks', fallback: true }, 429);
+      // Return 200 with fallback flag for rate-limit / upstream errors so the
+      // client can gracefully use cached/demo data instead of treating it as a hard failure.
+      if (status === 429 || status >= 500) {
+        return jsonResponse({ error: status === 429 ? 'Rate limited by SportMonks' : `SportMonks unavailable [${status}]`, fallback: true }, 200);
       }
       return jsonResponse({ error: `SportMonks error [${status}]`, fallback: true }, status);
     }
