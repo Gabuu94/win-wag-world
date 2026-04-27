@@ -355,7 +355,7 @@ const DepositModal = () => {
 
   const handleCryptoDeposit = async () => {
     if (!isLoggedIn || !user) { setShowDepositModal(false); setShowAuthModal(true); return; }
-    if (cryptoAmount < 5) { toast.error("Minimum deposit is $5"); return; }
+    if (cryptoAmount < 50) { toast.error("Minimum deposit is $50"); return; }
 
     setCryptoProcessing(true);
     try {
