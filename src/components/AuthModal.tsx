@@ -185,6 +185,30 @@ const AuthModal = () => {
             {submitting ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
           </button>
 
+          {isLogin && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!phone.trim()) {
+                    toast.error("Enter your phone number first, then click Forgot Password");
+                    return;
+                  }
+                  const fullPhone = `${selectedCountry.dial}${phone.replace(/^0+/, "")}`;
+                  const msg = `Password reset request for phone: ${fullPhone}`;
+                  sessionStorage.setItem("betking_support_prefill", msg);
+                  setShowAuthModal(false);
+                  resetForm();
+                  toast.info("Opening support chat to request a password reset...");
+                  window.dispatchEvent(new CustomEvent("betking:open-support", { detail: { message: msg } }));
+                }}
+                className="text-xs text-muted-foreground hover:text-primary transition"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
           <p className="text-center text-sm text-muted-foreground">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
