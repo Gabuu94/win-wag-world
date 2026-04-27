@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BettingProvider } from "@/context/BettingContext";
 import { AuthProvider } from "@/context/AuthContext";
 import AuthModal from "@/components/AuthModal";
+import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 import DepositModal from "@/components/DepositModal";
 import ChatSupport from "@/components/ChatSupport";
 import SplashScreen from "@/components/SplashScreen";
@@ -32,6 +33,7 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminGameCreator from "./pages/admin/AdminGameCreator";
 import AdminPromotions from "./pages/admin/AdminPromotions";
+import AdminPasswordResets from "./pages/admin/AdminPasswordResets";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <AuthModal />
+            <ForgotPasswordModal />
             <DepositModal />
             <ChatSupport />
             <Routes>
@@ -70,6 +73,7 @@ const App = () => (
                 <Route path="support" element={<AdminSupport />} />
                 <Route path="games" element={<AdminGameCreator />} />
                 <Route path="promotions" element={<AdminPromotions />} />
+                <Route path="password-resets" element={<AdminPasswordResets />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />

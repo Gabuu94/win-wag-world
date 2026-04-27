@@ -185,6 +185,23 @@ const AuthModal = () => {
             {submitting ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
           </button>
 
+          {isLogin && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAuthModal(false);
+                  window.dispatchEvent(new CustomEvent("betking:open-forgot-password", {
+                    detail: { dial: selectedCountry.dial, phone },
+                  }));
+                }}
+                className="text-xs text-muted-foreground hover:text-primary transition"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
           <p className="text-center text-sm text-muted-foreground">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
