@@ -272,6 +272,26 @@ Deno.serve(async (req) => {
       finished++;
     }
 
+    // 4. Catch-up: settle already-finished games whose markets were never resolved
+    // (e.g. game was finished manually or by a DB trigger that bypassed this function).
+    const { data: unresolvedFinished } = await supabase
+      .from("admin_games")
+      .select("*")
+      .eq("status", "finished");
+    let catchUpSettled = 0;
+    for (const g of unresolvedFinished || []) {
+      const { data: mks } = await supabase
+        .from("admin_game_markets")
+        .select("id, result")
+        .eq("game_id", g.id);
+      if (!mks || mks.length === 0) continue;
+      const alreadyResolved = mks.some((m: any) => m.result !== null && m.result !== "");
+      if (alreadyResolved) continue;
+      const { settled } = await settleGame(supabase, g);
+      catchUpSettled += settled;
+    }
+    totalSettled += catchUpSettled;
+
     return new Response(
       JSON.stringify({ ok: true, started, periodChanges, finished, settled: totalSettled, at: nowIso }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
