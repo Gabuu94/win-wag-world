@@ -238,7 +238,11 @@ export function useOdds(sportKey: string = "upcoming") {
           odds: { home: 1.5, draw: 3.5, away: 4.0 },
           totalMarkets: 10,
           commenceTime: g.start_time,
-          gameState: isLive ? { home_score: g.result_home ?? 0, away_score: g.result_away ?? 0, period: g.current_period, minute: liveMinute } : null,
+          // NOTE: Never expose result_home/result_away while the game is live — admins set
+          // those values up front and revealing them would spoil the outcome. Only show
+          // period & minute on live cards; the score stays hidden until status === "finished"
+          // (and finished games are filtered out of the feed above anyway).
+          gameState: isLive ? { home_score: null, away_score: null, period: g.current_period, minute: liveMinute } : null,
         };
       }).filter(Boolean) as NormalizedMatch[];
 

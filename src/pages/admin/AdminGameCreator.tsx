@@ -17,20 +17,32 @@ const SPORTS = [
 
 const FOOTBALL_MARKETS = [
   { type: "match_result", name: "Match Result (1X2)", selections: [{ name: "Home Win", odds: 1.5 }, { name: "Draw", odds: 3.5 }, { name: "Away Win", odds: 4.0 }] },
+  { type: "draw_no_bet", name: "Draw No Bet", selections: [{ name: "Home", odds: 1.4 }, { name: "Away", odds: 2.8 }] },
   { type: "btts", name: "Both Teams to Score", selections: [{ name: "Yes", odds: 1.7 }, { name: "No", odds: 2.1 }] },
-  { type: "over_under_2_5", name: "Over/Under 2.5 Goals", selections: [{ name: "Over 2.5", odds: 1.8 }, { name: "Under 2.5", odds: 2.0 }] },
+  { type: "over_under_0_5", name: "Over/Under 0.5 Goals", selections: [{ name: "Over 0.5", odds: 1.05 }, { name: "Under 0.5", odds: 8.0 }] },
   { type: "over_under_1_5", name: "Over/Under 1.5 Goals", selections: [{ name: "Over 1.5", odds: 1.3 }, { name: "Under 1.5", odds: 3.2 }] },
+  { type: "over_under_2_5", name: "Over/Under 2.5 Goals", selections: [{ name: "Over 2.5", odds: 1.8 }, { name: "Under 2.5", odds: 2.0 }] },
   { type: "over_under_3_5", name: "Over/Under 3.5 Goals", selections: [{ name: "Over 3.5", odds: 2.1 }, { name: "Under 3.5", odds: 1.7 }] },
+  { type: "over_under_4_5", name: "Over/Under 4.5 Goals", selections: [{ name: "Over 4.5", odds: 3.5 }, { name: "Under 4.5", odds: 1.3 }] },
+  { type: "over_under_5_5", name: "Over/Under 5.5 Goals", selections: [{ name: "Over 5.5", odds: 5.5 }, { name: "Under 5.5", odds: 1.15 }] },
   { type: "double_chance", name: "Double Chance", selections: [{ name: "1X", odds: 1.15 }, { name: "12", odds: 1.2 }, { name: "X2", odds: 1.8 }] },
   { type: "first_half", name: "First Half Result", selections: [{ name: "Home", odds: 2.0 }, { name: "Draw", odds: 2.2 }, { name: "Away", odds: 4.5 }] },
+  { type: "second_half", name: "Second Half Result", selections: [{ name: "Home", odds: 2.1 }, { name: "Draw", odds: 2.4 }, { name: "Away", odds: 4.0 }] },
+  { type: "first_half_btts", name: "BTTS - 1st Half", selections: [{ name: "Yes", odds: 3.5 }, { name: "No", odds: 1.25 }] },
+  { type: "first_half_over_0_5", name: "Over/Under 0.5 Goals - 1st Half", selections: [{ name: "Over 0.5", odds: 1.4 }, { name: "Under 0.5", odds: 2.7 }] },
+  { type: "first_half_over_1_5", name: "Over/Under 1.5 Goals - 1st Half", selections: [{ name: "Over 1.5", odds: 2.5 }, { name: "Under 1.5", odds: 1.5 }] },
+  { type: "team_total_home_over_1_5", name: "Home Team Over/Under 1.5", selections: [{ name: "Over 1.5", odds: 2.2 }, { name: "Under 1.5", odds: 1.6 }] },
+  { type: "team_total_away_over_1_5", name: "Away Team Over/Under 1.5", selections: [{ name: "Over 1.5", odds: 2.8 }, { name: "Under 1.5", odds: 1.4 }] },
+  { type: "goal_in_both_halves", name: "Goal in Both Halves", selections: [{ name: "Yes", odds: 2.4 }, { name: "No", odds: 1.5 }] },
   { type: "corners_total", name: "Total Corners Over/Under 9.5", selections: [{ name: "Over 9.5", odds: 1.85 }, { name: "Under 9.5", odds: 1.95 }] },
   { type: "cards_total", name: "Total Cards Over/Under 3.5", selections: [{ name: "Over 3.5", odds: 1.9 }, { name: "Under 3.5", odds: 1.9 }] },
-  { type: "correct_score", name: "Correct Score", selections: [{ name: "1-0", odds: 7.0 }, { name: "2-0", odds: 9.0 }, { name: "2-1", odds: 8.5 }, { name: "1-1", odds: 5.5 }, { name: "0-0", odds: 8.0 }, { name: "0-1", odds: 8.5 }, { name: "0-2", odds: 12.0 }] },
+  { type: "correct_score", name: "Correct Score", selections: [{ name: "1-0", odds: 7.0 }, { name: "2-0", odds: 9.0 }, { name: "2-1", odds: 8.5 }, { name: "1-1", odds: 5.5 }, { name: "0-0", odds: 8.0 }, { name: "0-1", odds: 8.5 }, { name: "0-2", odds: 12.0 }, { name: "3-0", odds: 15.0 }, { name: "3-1", odds: 14.0 }, { name: "3-2", odds: 18.0 }] },
   { type: "halftime_fulltime", name: "Halftime/Fulltime", selections: [{ name: "Home/Home", odds: 2.5 }, { name: "Home/Draw", odds: 12.0 }, { name: "Draw/Home", odds: 5.0 }, { name: "Draw/Draw", odds: 4.5 }, { name: "Away/Away", odds: 6.0 }] },
   { type: "first_goal", name: "First Goal Scorer Method", selections: [{ name: "Header", odds: 5.0 }, { name: "Shot", odds: 1.8 }, { name: "Penalty", odds: 6.0 }, { name: "Free Kick", odds: 12.0 }] },
   { type: "clean_sheet_home", name: "Home Clean Sheet", selections: [{ name: "Yes", odds: 2.2 }, { name: "No", odds: 1.6 }] },
   { type: "clean_sheet_away", name: "Away Clean Sheet", selections: [{ name: "Yes", odds: 3.0 }, { name: "No", odds: 1.35 }] },
   { type: "win_to_nil_home", name: "Home Win to Nil", selections: [{ name: "Yes", odds: 3.5 }, { name: "No", odds: 1.25 }] },
+  { type: "win_to_nil_away", name: "Away Win to Nil", selections: [{ name: "Yes", odds: 5.0 }, { name: "No", odds: 1.15 }] },
   { type: "penalty_awarded", name: "Penalty Awarded", selections: [{ name: "Yes", odds: 3.0 }, { name: "No", odds: 1.35 }] },
   { type: "red_card", name: "Red Card in Match", selections: [{ name: "Yes", odds: 4.0 }, { name: "No", odds: 1.2 }] },
   { type: "extra_time", name: "Extra Time", selections: [{ name: "Yes", odds: 5.0 }, { name: "No", odds: 1.1 }] },
@@ -350,32 +362,47 @@ const AdminGameCreator = () => {
       : Math.floor(2 + Math.random() * 4); // 2–5 typical
     const totalGoals = homeScore + awayScore;
 
-    // Build winning pick variants per market type. We include team-name aliases so picks like
-    // "Barcelona Win" match "Home Win" outcomes.
+    // Build winning pick variants per market type. Each market is settled INDEPENDENTLY —
+    // a Home Win bet must NOT lose just because the Correct Score the user picked was wrong.
     const homeName = String(game.home_team || "").trim();
     const awayName = String(game.away_team || "").trim();
     const winningPicks: Record<string, string[]> = {};
 
-    markets.forEach((m: any) => {
+    const computeWins = (marketType: string, selections: any[]): string[] => {
       const wins: string[] = [];
-      switch (m.market_type) {
+      switch (marketType) {
         case "match_result":
         case "match_winner":
-          if (homeScore > awayScore) wins.push("Home Win", "Home", `${homeName} Win`, homeName);
-          else if (homeScore < awayScore) wins.push("Away Win", "Away", `${awayName} Win`, awayName);
-          else wins.push("Draw");
+          if (homeScore > awayScore) wins.push("Home Win", "Home", `${homeName} Win`, homeName, "1");
+          else if (homeScore < awayScore) wins.push("Away Win", "Away", `${awayName} Win`, awayName, "2");
+          else wins.push("Draw", "X");
+          break;
+        case "draw_no_bet":
+          if (homeScore > awayScore) wins.push("Home", `${homeName} Win`, homeName);
+          else if (homeScore < awayScore) wins.push("Away", `${awayName} Win`, awayName);
+          // draw = void/push, no winner — but we mark both as wins so neither loses
+          else wins.push("Home", "Away", `${homeName} Win`, `${awayName} Win`);
           break;
         case "btts":
           wins.push(homeScore > 0 && awayScore > 0 ? "Yes" : "No");
           break;
-        case "over_under_2_5":
-          wins.push(totalGoals > 2.5 ? "Over 2.5" : "Under 2.5");
+        case "over_under_0_5":
+          wins.push(totalGoals > 0.5 ? "Over 0.5" : "Under 0.5");
           break;
         case "over_under_1_5":
           wins.push(totalGoals > 1.5 ? "Over 1.5" : "Under 1.5");
           break;
+        case "over_under_2_5":
+          wins.push(totalGoals > 2.5 ? "Over 2.5" : "Under 2.5");
+          break;
         case "over_under_3_5":
           wins.push(totalGoals > 3.5 ? "Over 3.5" : "Under 3.5");
+          break;
+        case "over_under_4_5":
+          wins.push(totalGoals > 4.5 ? "Over 4.5" : "Under 4.5");
+          break;
+        case "over_under_5_5":
+          wins.push(totalGoals > 5.5 ? "Over 5.5" : "Under 5.5");
           break;
         case "double_chance":
           if (homeScore >= awayScore) wins.push("1X");
@@ -383,9 +410,34 @@ const AdminGameCreator = () => {
           if (awayScore >= homeScore) wins.push("X2");
           break;
         case "first_half":
-          if (htHome > htAway) wins.push("Home", `${homeName} Win`, homeName);
-          else if (htHome < htAway) wins.push("Away", `${awayName} Win`, awayName);
-          else wins.push("Draw");
+          if (htHome > htAway) wins.push("Home", `${homeName} Win`, homeName, "1");
+          else if (htHome < htAway) wins.push("Away", `${awayName} Win`, awayName, "2");
+          else wins.push("Draw", "X");
+          break;
+        case "second_half": {
+          const sh = (homeScore - htHome) - (awayScore - htAway);
+          if (sh > 0) wins.push("Home", `${homeName} Win`, homeName, "1");
+          else if (sh < 0) wins.push("Away", `${awayName} Win`, awayName, "2");
+          else wins.push("Draw", "X");
+          break;
+        }
+        case "first_half_btts":
+          wins.push(htHome > 0 && htAway > 0 ? "Yes" : "No");
+          break;
+        case "first_half_over_0_5":
+          wins.push((htHome + htAway) > 0.5 ? "Over 0.5" : "Under 0.5");
+          break;
+        case "first_half_over_1_5":
+          wins.push((htHome + htAway) > 1.5 ? "Over 1.5" : "Under 1.5");
+          break;
+        case "team_total_home_over_1_5":
+          wins.push(homeScore > 1.5 ? "Over 1.5" : "Under 1.5");
+          break;
+        case "team_total_away_over_1_5":
+          wins.push(awayScore > 1.5 ? "Over 1.5" : "Under 1.5");
+          break;
+        case "goal_in_both_halves":
+          wins.push((htHome + htAway) > 0 && ((homeScore - htHome) + (awayScore - htAway)) > 0 ? "Yes" : "No");
           break;
         case "corners_total":
           wins.push(totalCorners > 9.5 ? "Over 9.5" : "Under 9.5");
@@ -394,7 +446,7 @@ const AdminGameCreator = () => {
           wins.push(totalCards > 3.5 ? "Over 3.5" : "Under 3.5");
           break;
         case "correct_score":
-          // EXACT match — admin's entered score must equal one of the offered correct-score selections
+          // EXACT match — only the user who picked the exact final score wins this market
           wins.push(`${homeScore}-${awayScore}`);
           break;
         case "halftime_fulltime": {
@@ -412,19 +464,27 @@ const AdminGameCreator = () => {
         case "win_to_nil_home":
           wins.push(homeScore > 0 && awayScore === 0 ? "Yes" : "No");
           break;
+        case "win_to_nil_away":
+          wins.push(awayScore > 0 && homeScore === 0 ? "Yes" : "No");
+          break;
         case "extra_time":
           wins.push(game.has_extra_time && results.extra_time_result_home != null ? "Yes" : "No");
           break;
         default: {
-          // Unknown / "any other" market — auto-pick: randomly select one of the offered selections
-          const sels = (m.selections as any[]) || [];
-          if (sels.length > 0) {
-            const choice = sels[Math.floor(Math.random() * sels.length)];
+          // Unknown / custom market — auto-pick: randomly select one of the offered selections
+          if (selections.length > 0) {
+            const choice = selections[Math.floor(Math.random() * selections.length)];
             wins.push(String(choice.name));
           }
           break;
         }
       }
+      return wins;
+    };
+
+    markets.forEach((m: any) => {
+      const sels = (m.selections as any[]) || [];
+      const wins = computeWins(m.market_type, sels);
       winningPicks[m.market_type] = wins;
       // Persist the winning result on the market for future auditing
       void supabase.from("admin_game_markets").update({ result: wins.join(", ") || null }).eq("id", m.id);
@@ -432,18 +492,45 @@ const AdminGameCreator = () => {
 
     // Helper: does this selection belong to this game?
     const selectionMatchesGame = (s: any): boolean => {
-      const label = String(s.matchLabel || "");
       const id = String(s.id || "");
-      // Selection IDs created from admin matches are prefixed with `admin-<gameId>-...`
       if (id.startsWith(`admin-${gameId}`)) return true;
+      const label = String(s.matchLabel || "");
       return label.includes(homeName) && label.includes(awayName);
     };
 
-    // Helper: did this single selection win?
+    // Helper: extract the market_type from a selection's id, e.g.
+    //   "admin-<gameId>-home"        -> "match_result"  (1X2 shortcut)
+    //   "admin-<gameId>-draw"        -> "match_result"
+    //   "admin-<gameId>-away"        -> "match_result"
+    //   "admin-<gameId>-btts-Yes"    -> "btts"
+    //   "admin-<gameId>-correct_score-2-1" -> "correct_score"
+    const extractMarketType = (s: any): string | null => {
+      const id = String(s.id || "");
+      const prefix = `admin-${gameId}-`;
+      if (!id.startsWith(prefix)) return null;
+      const tail = id.slice(prefix.length);
+      if (tail === "home" || tail === "draw" || tail === "away") return "match_result";
+      // market_type is the first segment up to the next "-" — but our market types contain
+      // underscores already (e.g. over_under_2_5), so we match against known keys.
+      for (const mt of Object.keys(winningPicks)) {
+        if (tail === mt || tail.startsWith(`${mt}-`)) return mt;
+      }
+      return null;
+    };
+
+    // Helper: did this single selection win? Each leg is judged ONLY against its own market.
     const isWinningSelection = (s: any): boolean => {
       const pick = String(s.pick || "").trim();
       const pickLower = pick.toLowerCase();
-      for (const wins of Object.values(winningPicks)) {
+      const marketType = extractMarketType(s);
+
+      // Restrict to this market's winners. If we can't identify the market (legacy / custom),
+      // fall back to the union of all winners so we don't unfairly mark it lost.
+      const candidateLists = marketType && winningPicks[marketType]
+        ? [winningPicks[marketType]]
+        : Object.values(winningPicks);
+
+      for (const wins of candidateLists) {
         for (const w of wins) {
           const wLower = w.toLowerCase();
           if (pickLower === wLower) return true;
@@ -465,6 +552,8 @@ const AdminGameCreator = () => {
       // Only settle if all bet selections relate to this game (other-game legs settle separately)
       if (otherSels.length > 0) continue;
 
+      // An accumulator wins only if EVERY leg won — but each leg is now judged independently
+      // against its own market, so a wrong correct-score won't kill an otherwise-winning Home Win.
       const allWon = matchedSels.every(isWinningSelection);
       const newStatus = allWon ? "won" : "lost";
       await supabase.from("bets").update({ status: newStatus }).eq("id", bet.id);
