@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
+    console.log('Lipwa STK push response:', response.status, JSON.stringify(data));
 
     if (!response.ok) {
       throw new Error(`Lipwa API error [${response.status}]: ${JSON.stringify(data)}`);
