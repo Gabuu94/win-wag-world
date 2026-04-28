@@ -209,10 +209,16 @@ const DepositModal = () => {
 
     const handleRow = (row: any) => {
       if (!row || row.type !== "deposit") return;
-      // Accept any deposit row matching our pending one, OR any completed/failed
-      // deposit row for this user while we are waiting (covers legacy INSERT path).
       const isWaiting = phase.kind === "stk-sent" || phase.kind === "crypto-pending";
       if (!isWaiting) return;
+
+      // Only accept the row tied to THIS attempt, OR rows created after we
+      // started waiting (covers legacy callback that inserts a new row).
+      const pendingId = pendingTxRef.current;
+      const rowTime = row.created_at ? new Date(row.created_at).getTime() : 0;
+      const matchesPending = pendingId && row.id === pendingId;
+      const isNewEnough = waitStartRef.current > 0 && rowTime >= waitStartRef.current - 1000;
+      if (!matchesPending && !isNewEnough) return;
 
       if (row.status === "completed") {
         const method = row.method === "mpesa" ? "mpesa" : "crypto";
