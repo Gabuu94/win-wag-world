@@ -374,6 +374,7 @@ const DepositModal = () => {
     if (cryptoAmount < 50) { toast.error("Minimum deposit is $50"); return; }
 
     setCryptoProcessing(true);
+    waitStartRef.current = Date.now();
     try {
       const { data: tx } = await supabase.from("transactions").insert({
         user_id: user.id,
