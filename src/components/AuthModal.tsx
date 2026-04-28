@@ -129,6 +129,20 @@ const AuthModal = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Recovery email — used for password resets */}
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="email"
+                  placeholder="Email (for password resets)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
+                  required={!isLogin}
+                  autoComplete="email"
+                />
+              </div>
             </>
           )}
 
