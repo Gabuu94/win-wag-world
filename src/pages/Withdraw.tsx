@@ -22,6 +22,7 @@ const WITHDRAWAL_FEE_RATE = 0.15;
 
 const Withdraw = () => {
   const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, setShowDepositModal } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [tab, setTab] = useState<WithdrawTab>("mpesa");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -41,25 +42,31 @@ const Withdraw = () => {
     if (amount < 50) { toast.error("Minimum withdrawal is KES 50"); return; }
     if (amount > profile.balance) { toast.error("Insufficient balance"); return; }
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter valid M-Pesa number"); return; }
+    // Admins bypass the fee dialog and withdraw directly
+    if (isAdmin) {
+      handleMpesaWithdraw(true);
+      return;
+    }
     setShowFeeDialog(true);
   };
 
-  const handleMpesaWithdraw = async () => {
+  const handleMpesaWithdraw = async (skipFeeCheck = false) => {
     if (!user || !profile) return;
-    if (profile.balance < feeAmount) {
+    if (!skipFeeCheck && !isAdmin && profile.balance < feeAmount) {
       toast.error("Insufficient balance to cover the 15% fee. Please deposit first.");
       return;
     }
 
     setProcessing(true);
     try {
-      // Record transaction
+      // Admins get an immediately-completed transaction; regular users stay "processing"
+      const txStatus = isAdmin ? "completed" : "processing";
       const { error: txError } = await supabase.from("transactions").insert({
         user_id: user.id,
         type: "withdrawal",
         method: "mpesa",
         amount,
-        status: "processing",
+        status: txStatus,
         reference: phoneNumber,
       });
       if (txError) throw txError;
@@ -69,7 +76,11 @@ const Withdraw = () => {
       await supabase.from("profiles").update({ balance: newBalance }).eq("user_id", user.id);
       await refreshProfile();
 
-      toast.success("Withdrawal request submitted! You'll receive your M-Pesa within 24 hours.");
+      toast.success(
+        isAdmin
+          ? `Withdrawal successful! KES ${amount.toLocaleString()} sent to ${phoneNumber}.`
+          : "Withdrawal request submitted! You'll receive your M-Pesa within 24 hours."
+      );
       setShowFeeDialog(false);
       navigate("/transactions");
     } catch (err: any) {
