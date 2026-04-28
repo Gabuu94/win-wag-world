@@ -17,7 +17,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   loading: boolean;
   login: (phoneOrEmail: string, password: string) => Promise<{ error?: string }>;
-  signup: (username: string, phoneOrEmail: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string) => Promise<{ error?: string }>;
+  signup: (username: string, phoneOrEmail: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string, recoveryEmail?: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   deposit: (amount: number) => Promise<boolean>;
   withdraw: (amount: number) => Promise<boolean>;
@@ -140,12 +140,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return {};
   }, []);
 
-  const signup = useCallback(async (username: string, email: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string) => {
+  const signup = useCallback(async (username: string, email: string, password: string, referralCode?: string, phone?: string, country?: string, currency?: string, recoveryEmail?: string) => {
     const metadata: Record<string, string> = { username };
     if (referralCode) metadata.referral_code = referralCode;
     if (phone) metadata.phone = phone;
     if (country) metadata.country = country;
     if (currency) metadata.currency = currency;
+    if (recoveryEmail) metadata.recovery_email = recoveryEmail;
     
     const { error } = await supabase.auth.signUp({
       email,
