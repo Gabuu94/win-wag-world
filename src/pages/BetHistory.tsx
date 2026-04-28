@@ -84,16 +84,21 @@ const BetHistory = () => {
           <div className="space-y-3">
             {bets.map((bet) => (
               <div key={bet.id} className="bg-card border border-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${
-                    bet.status === "pending"
-                      ? "bg-accent/20 text-accent"
-                      : bet.status === "won"
-                      ? "bg-primary/20 text-primary"
-                      : "bg-destructive/20 text-destructive"
-                  }`}>
-                    {bet.status}
-                  </span>
+                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${
+                      bet.status === "pending"
+                        ? "bg-accent/20 text-accent"
+                        : bet.status === "won"
+                        ? "bg-primary/20 text-primary"
+                        : "bg-destructive/20 text-destructive"
+                    }`}>
+                      {bet.status}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      ID: {bet.id.slice(0, 8).toUpperCase()}
+                    </span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {new Date(bet.placed_at).toLocaleString()}
                   </span>
