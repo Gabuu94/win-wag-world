@@ -197,6 +197,9 @@ const DepositModal = () => {
 
   // Track the current pending transaction so we can listen for confirmation
   const pendingTxRef = useRef<string | null>(null);
+  // Timestamp marking when the current waiting attempt started — we ignore
+  // any tx rows older than this so previous failures don't poison a new try.
+  const waitStartRef = useRef<number>(0);
 
   // Realtime listener for transaction status changes (success/fail signals).
   // Listens to UPDATE (new flow: callback updates the pending row) AND INSERT
@@ -206,10 +209,16 @@ const DepositModal = () => {
 
     const handleRow = (row: any) => {
       if (!row || row.type !== "deposit") return;
-      // Accept any deposit row matching our pending one, OR any completed/failed
-      // deposit row for this user while we are waiting (covers legacy INSERT path).
       const isWaiting = phase.kind === "stk-sent" || phase.kind === "crypto-pending";
       if (!isWaiting) return;
+
+      // Only accept the row tied to THIS attempt, OR rows created after we
+      // started waiting (covers legacy callback that inserts a new row).
+      const pendingId = pendingTxRef.current;
+      const rowTime = row.created_at ? new Date(row.created_at).getTime() : 0;
+      const matchesPending = pendingId && row.id === pendingId;
+      const isNewEnough = waitStartRef.current > 0 && rowTime >= waitStartRef.current - 1000;
+      if (!matchesPending && !isNewEnough) return;
 
       if (row.status === "completed") {
         const method = row.method === "mpesa" ? "mpesa" : "crypto";
@@ -272,14 +281,20 @@ const DepositModal = () => {
         .eq("type", "deposit")
         .in("status", ["completed", "failed", "cancelled"])
         .order("created_at", { ascending: false })
-        .limit(1);
+        .limit(5);
 
-      const row = data?.[0];
+      if (!data || data.length === 0) return;
+
+      const pendingId = pendingTxRef.current;
+      const startedAt = waitStartRef.current;
+
+      // Prefer the row tied to this exact attempt; else fall back to any row
+      // created at/after this attempt started.
+      const row =
+        data.find((r) => pendingId && r.id === pendingId) ??
+        data.find((r) => startedAt > 0 && new Date(r.created_at).getTime() >= startedAt - 1000);
+
       if (!row) return;
-
-      // Only act on rows newer than ~5 minutes ago
-      const ageMs = Date.now() - new Date(row.created_at).getTime();
-      if (ageMs > 5 * 60 * 1000) return;
 
       if (row.status === "completed") {
         const method = row.method === "mpesa" ? "mpesa" : "crypto";
@@ -324,6 +339,7 @@ const DepositModal = () => {
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
 
     setMpesaProcessing(true);
+    waitStartRef.current = Date.now();
     try {
       // Record pending transaction
       const { data: tx } = await supabase.from("transactions").insert({
@@ -358,6 +374,7 @@ const DepositModal = () => {
     if (cryptoAmount < 50) { toast.error("Minimum deposit is $50"); return; }
 
     setCryptoProcessing(true);
+    waitStartRef.current = Date.now();
     try {
       const { data: tx } = await supabase.from("transactions").insert({
         user_id: user.id,
