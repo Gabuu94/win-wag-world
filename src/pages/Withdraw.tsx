@@ -187,8 +187,14 @@ const Withdraw = () => {
                 `Withdraw KES ${amount.toLocaleString()}`
               )}
             </button>
+            {isAdmin && (
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-primary bg-primary/10 border border-primary/30 rounded-md py-2">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="font-bold uppercase tracking-wider">Admin — instant withdrawal, no fee</span>
+              </div>
+            )}
             <p className="text-[10px] text-muted-foreground text-center">
-              Withdrawals are processed within 24 hours. Min: KES 50.
+              {isAdmin ? "Admin withdrawals are processed instantly." : "Withdrawals are processed within 24 hours. Min: KES 50."}
             </p>
           </div>
         )}
