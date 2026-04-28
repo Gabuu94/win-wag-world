@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock, AlertTriangle, Wallet } from "lucide-react";
+import { ArrowLeft, Smartphone, Bitcoin, Loader2, Lock, AlertTriangle, Wallet, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/currency";
 import {
