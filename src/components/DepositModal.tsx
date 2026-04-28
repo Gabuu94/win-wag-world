@@ -197,6 +197,9 @@ const DepositModal = () => {
 
   // Track the current pending transaction so we can listen for confirmation
   const pendingTxRef = useRef<string | null>(null);
+  // Timestamp marking when the current waiting attempt started — we ignore
+  // any tx rows older than this so previous failures don't poison a new try.
+  const waitStartRef = useRef<number>(0);
 
   // Realtime listener for transaction status changes (success/fail signals).
   // Listens to UPDATE (new flow: callback updates the pending row) AND INSERT
