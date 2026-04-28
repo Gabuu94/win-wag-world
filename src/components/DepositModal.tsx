@@ -339,6 +339,7 @@ const DepositModal = () => {
     if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
 
     setMpesaProcessing(true);
+    waitStartRef.current = Date.now();
     try {
       // Record pending transaction
       const { data: tx } = await supabase.from("transactions").insert({
