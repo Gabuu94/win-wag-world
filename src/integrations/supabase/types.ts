@@ -361,12 +361,40 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token_hash: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token_hash: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           balance: number
           country: string | null
           created_at: string
           currency: string | null
+          email: string | null
           id: string
           phone: string | null
           referral_code: string | null
@@ -380,6 +408,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           currency?: string | null
+          email?: string | null
           id?: string
           phone?: string | null
           referral_code?: string | null
@@ -393,6 +422,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           currency?: string | null
+          email?: string | null
           id?: string
           phone?: string | null
           referral_code?: string | null
