@@ -281,14 +281,20 @@ const DepositModal = () => {
         .eq("type", "deposit")
         .in("status", ["completed", "failed", "cancelled"])
         .order("created_at", { ascending: false })
-        .limit(1);
+        .limit(5);
 
-      const row = data?.[0];
+      if (!data || data.length === 0) return;
+
+      const pendingId = pendingTxRef.current;
+      const startedAt = waitStartRef.current;
+
+      // Prefer the row tied to this exact attempt; else fall back to any row
+      // created at/after this attempt started.
+      const row =
+        data.find((r) => pendingId && r.id === pendingId) ??
+        data.find((r) => startedAt > 0 && new Date(r.created_at).getTime() >= startedAt - 1000);
+
       if (!row) return;
-
-      // Only act on rows newer than ~5 minutes ago
-      const ageMs = Date.now() - new Date(row.created_at).getTime();
-      if (ageMs > 5 * 60 * 1000) return;
 
       if (row.status === "completed") {
         const method = row.method === "mpesa" ? "mpesa" : "crypto";
