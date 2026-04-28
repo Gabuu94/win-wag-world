@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Lock, User, Phone, Globe } from "lucide-react";
+import { X, Lock, User, Phone, Globe, Mail } from "lucide-react";
 import { useAuth, phoneToSyntheticEmail } from "@/context/AuthContext";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ const AuthModal = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("KE");
   const [submitting, setSubmitting] = useState(false);
@@ -59,7 +60,12 @@ const AuthModal = () => {
           setSubmitting(false);
           return;
         }
-        const result = await signup(username, syntheticEmail, password, undefined, fullPhone, country, selectedCountry.currency);
+        if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+          toast.error("A valid email is required for password recovery");
+          setSubmitting(false);
+          return;
+        }
+        const result = await signup(username, syntheticEmail, password, undefined, fullPhone, country, selectedCountry.currency, email.trim().toLowerCase());
         if (result.error) {
           toast.error(result.error);
         } else {
@@ -76,6 +82,7 @@ const AuthModal = () => {
   const resetForm = () => {
     setUsername("");
     setPhone("");
+    setEmail("");
     setPassword("");
   };
 
@@ -121,6 +128,20 @@ const AuthModal = () => {
                     <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.currency})</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Recovery email — used for password resets */}
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="email"
+                  placeholder="Email (for password resets)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
+                  required={!isLogin}
+                  autoComplete="email"
+                />
               </div>
             </>
           )}
