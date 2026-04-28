@@ -12,9 +12,12 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log('Mpesa callback received:', JSON.stringify(body));
+    console.log('Mpesa callback received (FULL):', JSON.stringify(body, null, 2));
 
-    const { status, amount, api_ref, mpesa_code, checkout_id, phone_number } = body;
+    const { status, amount, api_ref, mpesa_code, checkout_id, phone_number, result_desc, ResultDesc, failure_reason, message } = body;
+    if (status === 'payment.failed') {
+      console.warn('LIPWA FAILURE REASON:', result_desc || ResultDesc || failure_reason || message || 'no reason provided by Lipwa');
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
