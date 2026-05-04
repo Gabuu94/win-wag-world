@@ -31,3 +31,5 @@ project_id = "kgcnuucwqfasubtnqqmp"
     verify_jwt = false
   [functions.confirm-password-reset]
     verify_jwt = false
+  [functions.broadcast-promotion]
+    verify_jwt = false
