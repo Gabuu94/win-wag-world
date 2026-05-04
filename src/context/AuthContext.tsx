@@ -148,12 +148,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (currency) metadata.currency = currency;
     if (recoveryEmail) metadata.recovery_email = recoveryEmail;
     
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: metadata },
     });
     if (error) return { error: error.message };
+
+    // Fire-and-forget welcome email — only if user supplied a recovery email
+    if (recoveryEmail && signUpData?.user) {
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "welcome",
+          recipientEmail: recoveryEmail,
+          idempotencyKey: `welcome-${signUpData.user.id}`,
+          templateData: {
+            username,
+            ctaUrl: `${window.location.origin}/`,
+          },
+        },
+      }).catch(() => {});
+    }
     return {};
   }, []);
 

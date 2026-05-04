@@ -28,10 +28,10 @@ Deno.serve(async (req) => {
       const userId = api_ref.user_id;
       const amt = Number(amount);
 
-      // 1. Credit the wallet
+      // 1. Credit the wallet (+ 50% welcome bonus on the first deposit)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('balance')
+        .select('balance, welcome_bonus_claimed')
         .eq('user_id', userId)
         .single();
 
@@ -41,10 +41,16 @@ Deno.serve(async (req) => {
         });
       }
 
-      const newBalance = Number(profile.balance) + amt;
+      const isFirstDeposit = !profile.welcome_bonus_claimed;
+      const bonus = isFirstDeposit ? Math.round(amt * 0.5 * 100) / 100 : 0;
+      const newBalance = Number(profile.balance) + amt + bonus;
+
       await supabase
         .from('profiles')
-        .update({ balance: newBalance })
+        .update({
+          balance: newBalance,
+          ...(isFirstDeposit ? { welcome_bonus_claimed: true } : {}),
+        })
         .eq('user_id', userId);
 
       // 2. Update the most recent matching PENDING transaction so the
@@ -83,15 +89,30 @@ Deno.serve(async (req) => {
         });
       }
 
+      // 2b. Record the bonus as its own transaction line for clarity
+      if (bonus > 0) {
+        await supabase.from('transactions').insert({
+          user_id: userId,
+          type: 'deposit',
+          method: 'bonus',
+          amount: bonus,
+          status: 'completed',
+          reference: `WELCOME50-${mpesa_code || checkout_id || 'mpesa'}`,
+          metadata: { source: 'welcome_bonus', deposit_amount: amt },
+        });
+      }
+
       // 3. Notify the user
       await supabase.from('notifications').insert({
         user_id: userId,
         title: 'Deposit Successful',
-        message: `KES ${amt} has been added to your wallet.`,
+        message: bonus > 0
+          ? `KES ${amt} deposited + KES ${bonus} welcome bonus credited (50%)!`
+          : `KES ${amt} has been added to your wallet.`,
         type: 'deposit',
       });
 
-      console.log(`Deposited KES ${amount} for user ${userId}. Mpesa code: ${mpesa_code}`);
+      console.log(`Deposited KES ${amount} for user ${userId}. Bonus: KES ${bonus}. Mpesa code: ${mpesa_code}`);
     } else if (status === 'payment.failed' && api_ref?.user_id) {
       const userId = api_ref.user_id;
       const amt = Number(amount);
