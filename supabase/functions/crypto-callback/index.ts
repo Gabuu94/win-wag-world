@@ -83,27 +83,52 @@ Deno.serve(async (req) => {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('balance')
+          .select('balance, welcome_bonus_claimed')
           .eq('user_id', user_id)
           .single();
 
         if (profile) {
-          const newBalance = Number(profile.balance) + Number(price_amount);
+          const amt = Number(price_amount);
+          const isFirstDeposit = !profile.welcome_bonus_claimed;
+          const bonus = isFirstDeposit ? Math.round(amt * 0.5 * 100) / 100 : 0;
+          const newBalance = Number(profile.balance) + amt + bonus;
+
           await supabase
             .from('profiles')
-            .update({ balance: newBalance })
+            .update({
+              balance: newBalance,
+              ...(isFirstDeposit ? { welcome_bonus_claimed: true } : {}),
+            })
             .eq('user_id', user_id);
 
           await supabase.from('transactions').insert({
             user_id,
             type: 'deposit',
             method: 'crypto',
-            amount: Number(price_amount),
+            amount: amt,
             status: 'completed',
             reference: order_id,
           });
 
-          console.log(`Crypto deposit: $${price_amount} credited to user ${user_id}`);
+          if (bonus > 0) {
+            await supabase.from('transactions').insert({
+              user_id,
+              type: 'deposit',
+              method: 'bonus',
+              amount: bonus,
+              status: 'completed',
+              reference: `WELCOME50-${order_id}`,
+              metadata: { source: 'welcome_bonus', deposit_amount: amt },
+            });
+            await supabase.from('notifications').insert({
+              user_id,
+              title: 'Welcome Bonus Credited',
+              message: `Your 50% first-deposit bonus of $${bonus} has been added to your wallet!`,
+              type: 'bonus',
+            });
+          }
+
+          console.log(`Crypto deposit: $${amt} + $${bonus} bonus credited to user ${user_id}`);
         }
       }
     }
