@@ -402,6 +402,7 @@ export type Database = {
           updated_at: string
           user_id: string
           username: string
+          welcome_bonus_claimed: boolean
         }
         Insert: {
           balance?: number
@@ -416,6 +417,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           username: string
+          welcome_bonus_claimed?: boolean
         }
         Update: {
           balance?: number
@@ -430,6 +432,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string
+          welcome_bonus_claimed?: boolean
         }
         Relationships: []
       }
