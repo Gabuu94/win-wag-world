@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     )
 
   try {
-    const { phone, email, siteUrl } = await req.json()
+    const { phone, email } = await req.json()
 
     if (!phone || !email) return genericResponse()
 
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       return genericResponse()
     }
 
-    const baseUrl = (siteUrl || 'https://betking.space').replace(/\/$/, '')
+    const baseUrl = 'https://betking.space'
     const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`
 
     // Send branded email via send-transactional-email
