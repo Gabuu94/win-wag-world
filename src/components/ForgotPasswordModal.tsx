@@ -67,7 +67,6 @@ const ForgotPasswordModal = () => {
         body: {
           phone: fullPhone,
           email: email.trim().toLowerCase(),
-          siteUrl: window.location.origin,
         },
       });
       if (error) throw error;

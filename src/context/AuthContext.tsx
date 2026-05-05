@@ -164,7 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           idempotencyKey: `welcome-${signUpData.user.id}`,
           templateData: {
             username,
-            ctaUrl: `${window.location.origin}/`,
+            ctaUrl: "https://betking.space",
           },
         },
       }).catch(() => {});
