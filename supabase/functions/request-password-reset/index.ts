@@ -22,6 +22,20 @@ function generateToken(): string {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
+function phonesMatch(storedPhone: string | null | undefined, requestedPhone: string): boolean {
+  const storedDigits = (storedPhone || '').replace(/\D/g, '')
+  const requestedDigits = requestedPhone.replace(/\D/g, '')
+  const storedLocal = storedDigits.replace(/^0+/, '')
+  const requestedLocal = requestedDigits.replace(/^0+/, '')
+  return Boolean(
+    storedDigits && requestedDigits &&
+    (storedDigits === requestedDigits ||
+      storedDigits.endsWith(requestedLocal) ||
+      requestedDigits.endsWith(storedLocal)) &&
+    Math.min(storedLocal.length, requestedLocal.length) >= 7
+  )
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
@@ -37,7 +51,7 @@ Deno.serve(async (req) => {
     )
 
   try {
-    const { phone, email, siteUrl } = await req.json()
+    const { phone, email } = await req.json()
 
     if (!phone || !email) return genericResponse()
 
@@ -51,9 +65,7 @@ Deno.serve(async (req) => {
       .ilike('email', normalizedEmail)
       .limit(5)
 
-    const match = (profiles || []).find(
-      (p: any) => (p.phone || '').replace(/\D/g, '') === normalizedPhone
-    )
+    const match = (profiles || []).find((p: any) => phonesMatch(p.phone, normalizedPhone))
 
     if (!match) {
       console.log('No matching profile for password reset request')
@@ -74,7 +86,7 @@ Deno.serve(async (req) => {
       return genericResponse()
     }
 
-    const baseUrl = (siteUrl || 'https://betking.space').replace(/\/$/, '')
+    const baseUrl = 'https://betking.space'
     const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`
 
     // Send branded email via send-transactional-email

@@ -67,7 +67,6 @@ const ForgotPasswordModal = () => {
         body: {
           phone: fullPhone,
           email: email.trim().toLowerCase(),
-          siteUrl: window.location.origin,
         },
       });
       if (error) throw error;
@@ -176,7 +175,7 @@ const ForgotPasswordModal = () => {
             </button>
 
             <p className="text-xs text-center text-muted-foreground">
-              No recovery email on your account? Contact support@betking.space.
+              Use the same recovery email you added when creating your BETKING account.
             </p>
           </form>
         )}

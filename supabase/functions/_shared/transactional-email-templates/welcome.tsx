@@ -43,7 +43,7 @@ const WelcomeEmail = ({ username, ctaUrl }: WelcomeEmailProps) => (
         </Section>
 
         <Section style={{ textAlign: 'center' as const, margin: '24px 0' }}>
-          <Button style={button} href={ctaUrl || 'https://betking.space'}>
+          <Button style={button} href={ctaUrl || 'https://betking.space/?deposit=1'}>
             Make Your First Deposit
           </Button>
         </Section>
@@ -76,7 +76,7 @@ export const template = {
   displayName: 'Welcome',
   previewData: {
     username: 'Player123',
-    ctaUrl: 'https://betking.space',
+    ctaUrl: 'https://betking.space/?deposit=1',
   },
 } satisfies TemplateEntry
 

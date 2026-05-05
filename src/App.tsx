@@ -2,9 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 import { BettingProvider } from "@/context/BettingContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 import DepositModal from "@/components/DepositModal";
@@ -39,6 +41,21 @@ import AdminPasswordResets from "./pages/admin/AdminPasswordResets";
 
 const queryClient = new QueryClient();
 
+const DepositLinkHandler = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { setShowDepositModal } = useAuth();
+
+  useEffect(() => {
+    if (searchParams.get("deposit") !== "1") return;
+    setShowDepositModal(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("deposit");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, setShowDepositModal]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
@@ -51,6 +68,7 @@ const App = () => (
             <AuthModal />
             <ForgotPasswordModal />
             <DepositModal />
+            <DepositLinkHandler />
             <ChatSupport />
             <Routes>
               <Route path="/" element={<Index />} />
