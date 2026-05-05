@@ -30,31 +30,19 @@ const AdminPromotions = () => {
 
   const createPromo = async () => {
     if (!form.title || !form.description) return;
-    const { data: inserted, error } = await supabase.from("promotions").insert({
+    const { error } = await supabase.from("promotions").insert({
       title: form.title,
       description: form.description,
       bonus_type: form.bonus_type,
       bonus_value: form.bonus_value,
       min_deposit: form.min_deposit,
       end_date: form.end_date || null,
-    }).select().single();
+    });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Promotion created!", description: "Notifying players via email…" });
+    toast({ title: "Promotion created!", description: "Players will see it on the Promotions page." });
     setShowForm(false);
     setForm({ title: "", description: "", bonus_type: "deposit_match", bonus_value: 100, min_deposit: 10, end_date: "" });
     fetchPromos();
-
-    // Broadcast announcement email to all users with a recovery email
-    if (inserted?.id) {
-      const { data: result, error: broadcastErr } = await supabase.functions.invoke("broadcast-promotion", {
-        body: { promotionId: inserted.id },
-      });
-      if (broadcastErr) {
-        toast({ title: "Email broadcast failed", description: broadcastErr.message, variant: "destructive" });
-      } else if (result) {
-        toast({ title: "Players notified", description: `Sent to ${result.sent} of ${result.recipients} players.` });
-      }
-    }
   };
 
   const toggleActive = async (id: string, active: boolean) => {
