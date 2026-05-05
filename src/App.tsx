@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom"
 import { useEffect } from "react";
 import { BettingProvider } from "@/context/BettingContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 import DepositModal from "@/components/DepositModal";
