@@ -52,8 +52,13 @@ const BettingSlipContent = () => {
       setShowAuthModal(true);
       return;
     }
-    if (!profile || profile.balance < stake) {
-      toast.error("Insufficient balance. Please deposit funds.");
+    const bettable = profile ? Math.max(0, profile.balance - (profile.winnings_balance || 0)) : 0;
+    if (!profile || bettable < stake) {
+      if (profile && (profile.winnings_balance || 0) > 0) {
+        toast.error("Winnings cannot be wagered. Withdraw them first or top up with a new deposit.");
+      } else {
+        toast.error("Insufficient balance. Please deposit funds.");
+      }
       setShowDepositModal(true);
       return;
     }
@@ -292,9 +297,17 @@ const BettingSlipContent = () => {
         </div>
 
         {isLoggedIn && profile && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Balance</span>
-            <span className="font-medium text-foreground">{formatMoney(profile.balance, profile)}</span>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Balance</span>
+              <span className="font-medium text-foreground">{formatMoney(profile.balance, profile)}</span>
+            </div>
+            {(profile.winnings_balance || 0) > 0 && (
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-accent">Winnings (locked — withdraw only)</span>
+                <span className="font-medium text-accent">{formatMoney(profile.winnings_balance, profile)}</span>
+              </div>
+            )}
           </div>
         )}
 

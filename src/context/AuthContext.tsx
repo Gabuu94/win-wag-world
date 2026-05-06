@@ -6,6 +6,8 @@ import type { User, Session } from "@supabase/supabase-js";
 export interface ProfileData {
   username: string;
   balance: number;
+  winnings_balance: number;
+  pending_fees: number;
   phone?: string;
   country?: string;
   currency?: string;
@@ -54,11 +56,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("username, balance, phone, country, currency")
+      .select("username, balance, winnings_balance, pending_fees, phone, country, currency")
       .eq("user_id", userId)
       .single();
     if (data) {
-      setProfile({ username: data.username, balance: Number(data.balance), phone: data.phone || undefined, country: data.country || undefined, currency: data.currency || undefined });
+      setProfile({
+        username: data.username,
+        balance: Number(data.balance),
+        winnings_balance: Number((data as any).winnings_balance ?? 0),
+        pending_fees: Number((data as any).pending_fees ?? 0),
+        phone: data.phone || undefined,
+        country: data.country || undefined,
+        currency: data.currency || undefined,
+      });
     }
   }, []);
 
@@ -83,7 +93,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }, (payload) => {
         const newData = payload.new as any;
         if (newData) {
-          setProfile((prev) => prev ? { ...prev, balance: Number(newData.balance) } : prev);
+          setProfile((prev) => prev ? {
+            ...prev,
+            balance: Number(newData.balance),
+            winnings_balance: Number(newData.winnings_balance ?? prev.winnings_balance),
+            pending_fees: Number(newData.pending_fees ?? prev.pending_fees),
+          } : prev);
         }
       })
       .subscribe();
@@ -201,7 +216,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, profile]);
 
   const placeBet = useCallback(async (bet: { selections: { matchLabel: string; pick: string; odds: number }[]; stake: number; totalOdds: number; potentialWin: number }) => {
-    if (!user || !profile || profile.balance < bet.stake) return false;
+    if (!user || !profile) return false;
+    // Winnings cannot be wagered — only money from deposits is bettable.
+    const bettable = Math.max(0, profile.balance - (profile.winnings_balance || 0));
+    if (bettable < bet.stake) return false;
     
     const newBalance = profile.balance - bet.stake;
     
