@@ -297,9 +297,17 @@ const BettingSlipContent = () => {
         </div>
 
         {isLoggedIn && profile && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Balance</span>
-            <span className="font-medium text-foreground">{formatMoney(profile.balance, profile)}</span>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Balance</span>
+              <span className="font-medium text-foreground">{formatMoney(profile.balance, profile)}</span>
+            </div>
+            {(profile.winnings_balance || 0) > 0 && (
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-accent">Winnings (locked — withdraw only)</span>
+                <span className="font-medium text-accent">{formatMoney(profile.winnings_balance, profile)}</span>
+              </div>
+            )}
           </div>
         )}
 
