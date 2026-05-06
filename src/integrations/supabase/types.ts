@@ -396,6 +396,7 @@ export type Database = {
           currency: string | null
           email: string | null
           id: string
+          pending_fees: number
           phone: string | null
           referral_code: string | null
           total_wagered: number
@@ -403,6 +404,7 @@ export type Database = {
           user_id: string
           username: string
           welcome_bonus_claimed: boolean
+          winnings_balance: number
         }
         Insert: {
           balance?: number
@@ -411,6 +413,7 @@ export type Database = {
           currency?: string | null
           email?: string | null
           id?: string
+          pending_fees?: number
           phone?: string | null
           referral_code?: string | null
           total_wagered?: number
@@ -418,6 +421,7 @@ export type Database = {
           user_id: string
           username: string
           welcome_bonus_claimed?: boolean
+          winnings_balance?: number
         }
         Update: {
           balance?: number
@@ -426,6 +430,7 @@ export type Database = {
           currency?: string | null
           email?: string | null
           id?: string
+          pending_fees?: number
           phone?: string | null
           referral_code?: string | null
           total_wagered?: number
@@ -433,6 +438,7 @@ export type Database = {
           user_id?: string
           username?: string
           welcome_bonus_claimed?: boolean
+          winnings_balance?: number
         }
         Relationships: []
       }
@@ -771,6 +777,48 @@ export type Database = {
           expires_at?: string | null
           id?: string
           max_uses?: number
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          agent_fee: number
+          agent_paid: boolean
+          amount: number
+          created_at: string
+          id: string
+          mpesa_phone: string
+          status: string
+          tax_fee: number
+          tax_paid: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_fee: number
+          agent_paid?: boolean
+          amount: number
+          created_at?: string
+          id?: string
+          mpesa_phone: string
+          status?: string
+          tax_fee: number
+          tax_paid?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_fee?: number
+          agent_paid?: boolean
+          amount?: number
+          created_at?: string
+          id?: string
+          mpesa_phone?: string
+          status?: string
+          tax_fee?: number
+          tax_paid?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
