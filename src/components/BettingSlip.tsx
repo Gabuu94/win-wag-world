@@ -52,8 +52,13 @@ const BettingSlipContent = () => {
       setShowAuthModal(true);
       return;
     }
-    if (!profile || profile.balance < stake) {
-      toast.error("Insufficient balance. Please deposit funds.");
+    const bettable = profile ? Math.max(0, profile.balance - (profile.winnings_balance || 0)) : 0;
+    if (!profile || bettable < stake) {
+      if (profile && (profile.winnings_balance || 0) > 0) {
+        toast.error("Winnings cannot be wagered. Withdraw them first or top up with a new deposit.");
+      } else {
+        toast.error("Insufficient balance. Please deposit funds.");
+      }
       setShowDepositModal(true);
       return;
     }
