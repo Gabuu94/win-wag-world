@@ -235,20 +235,23 @@ const AdminCustomers = () => {
               <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No customers found</TableCell></TableRow>
             ) : (
               filtered.map((c) => (
-                <TableRow key={c.id} className={selectedIds.has(c.user_id) ? "bg-primary/5" : ""}>
-                  <TableCell>
+                <TableRow key={c.id} className={`${selectedIds.has(c.user_id) ? "bg-primary/5" : ""} cursor-pointer`}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => toggleSelect(c.user_id)} className="p-1">
                       {selectedIds.has(c.user_id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
                     </button>
                   </TableCell>
-                  <TableCell className="font-medium">{c.username}</TableCell>
-                  <TableCell>{c.currency || "KES"} {Number(c.balance).toFixed(2)}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">{c.phone || "-"}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">{c.country || "-"}</TableCell>
-                  <TableCell className="hidden lg:table-cell">${Number(c.total_wagered).toFixed(2)}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-medium" onClick={() => setViewUserId(c.user_id)}>{c.username}</TableCell>
+                  <TableCell onClick={() => setViewUserId(c.user_id)}>{c.currency || "KES"} {Number(c.balance).toFixed(2)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs" onClick={() => setViewUserId(c.user_id)}>{c.phone || "-"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs" onClick={() => setViewUserId(c.user_id)}>{c.country || "-"}</TableCell>
+                  <TableCell className="hidden lg:table-cell" onClick={() => setViewUserId(c.user_id)}>${Number(c.total_wagered).toFixed(2)}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground text-xs" onClick={() => setViewUserId(c.user_id)}>{new Date(c.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <button onClick={() => setViewUserId(c.user_id)} className="p-1.5 rounded hover:bg-primary/10 text-primary" title="View details">
+                        <Eye className="w-4 h-4" />
+                      </button>
                       <button onClick={() => handleDelete(c.user_id)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive" title="Delete">
                         <Trash2 className="w-4 h-4" />
                       </button>
