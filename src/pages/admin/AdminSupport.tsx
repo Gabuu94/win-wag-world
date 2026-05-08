@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Send, RefreshCw, CheckCircle2, XCircle, Image as ImageIcon } from "lucide-react";
+import { Send, RefreshCw, CheckCircle2, XCircle, Image as ImageIcon, Eye } from "lucide-react";
+import UserDetailDrawer from "@/components/admin/UserDetailDrawer";
 
 interface ChatUser {
   user_id: string;
