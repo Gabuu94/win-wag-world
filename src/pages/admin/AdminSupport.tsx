@@ -31,6 +31,7 @@ const AdminSupport = () => {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
 
   const fetchChatUsers = async () => {
     setLoading(true);
