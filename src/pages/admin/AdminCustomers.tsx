@@ -263,6 +263,7 @@ const AdminCustomers = () => {
           </TableBody>
         </Table>
       </div>
+      <UserDetailDrawer userId={viewUserId} open={!!viewUserId} onOpenChange={(v) => !v && setViewUserId(null)} />
     </div>
   );
 };
