@@ -24,6 +24,7 @@ const generateShortCode = () => {
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
   const { isLoggedIn, profile, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
+  const { isAdmin } = useAdmin();
 
   // Load-code dialog state
   const [loadOpen, setLoadOpen] = useState(false);
