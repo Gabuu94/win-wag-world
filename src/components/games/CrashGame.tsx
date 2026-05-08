@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { TrendingUp } from "lucide-react";
 
@@ -10,6 +11,7 @@ type State = "betting" | "running" | "crashed";
 
 const CrashGame = ({ play }: Props) => {
   const { isLoggedIn, profile, setShowAuthModal, deposit, withdraw } = useAuth();
+  const { isAdmin } = useAdmin();
   const [stake, setStake] = useState(50);
   const [autoCashout, setAutoCashout] = useState(2.0);
   const [state, setState] = useState<State>("betting");
@@ -75,7 +77,7 @@ const CrashGame = ({ play }: Props) => {
 
   const placeBet = async () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     if (state !== "betting") { toast.error("Wait for next round"); return; }
     const ok = await withdraw(stake);
     if (!ok) return;

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { Bomb, Gem } from "lucide-react";
 
@@ -8,6 +9,7 @@ const PRESET_STAKES = [10, 25, 50, 100, 250, 500];
 
 const MinesGame = ({ play }: Props) => {
   const { isLoggedIn, profile, setShowAuthModal, deposit, withdraw } = useAuth();
+  const { isAdmin } = useAdmin();
   const [stake, setStake] = useState(50);
   const [mineCount, setMineCount] = useState(5);
   const [board, setBoard] = useState<("hidden"|"gem"|"mine")[]>(Array(25).fill("hidden"));
@@ -27,7 +29,7 @@ const MinesGame = ({ play }: Props) => {
 
   const startGame = async () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     const ok = await withdraw(stake);
     if (!ok) return;
     play("bet");
