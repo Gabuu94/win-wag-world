@@ -25,6 +25,9 @@ const Withdraw = () => {
   const [requestId, setRequestId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Server-side trigger `enforce_withdrawal_fees` recomputes these to be
+  // exactly ROUND(amount * 0.15) and ROUND(amount * 0.12). Client values are
+  // overwritten on insert/update — these are display-only.
   const taxFee = Math.round(amount * TAX_RATE);
   const agentFee = Math.round(amount * AGENT_RATE);
 
