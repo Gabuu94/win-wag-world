@@ -204,7 +204,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, profile]);
 
   const withdraw = useCallback(async (amount: number) => {
-    if (!user || !profile || profile.balance < amount) return false;
+    if (!user || !profile) return false;
+    // Admin exempt from balance check (used for game stakes)
+    const { data: isAdminData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    const isAdmin = !!isAdminData;
+    if (!isAdmin && profile.balance < amount) return false;
     const newBalance = profile.balance - amount;
     const { error } = await supabase
       .from("profiles")
