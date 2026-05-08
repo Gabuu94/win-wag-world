@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { Dices } from "lucide-react";
 
@@ -8,6 +9,7 @@ const PRESET_STAKES = [10, 25, 50, 100, 250, 500];
 
 const DiceGame = ({ play }: Props) => {
   const { isLoggedIn, profile, setShowAuthModal, deposit, withdraw } = useAuth();
+  const { isAdmin } = useAdmin();
   const [stake, setStake] = useState(50);
   const [target, setTarget] = useState(50);
   const [rollOver, setRollOver] = useState(true);

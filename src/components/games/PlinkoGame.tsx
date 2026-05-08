@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 
 interface Props { play: (s: "bet"|"win"|"lose"|"click"|"cashout"|"tick"|"reveal"|"bomb") => void; }
@@ -9,6 +10,7 @@ const MULTIPLIERS = [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6];
 
 const PlinkoGame = ({ play }: Props) => {
   const { isLoggedIn, profile, setShowAuthModal, deposit, withdraw } = useAuth();
+  const { isAdmin } = useAdmin();
   const [stake, setStake] = useState(50);
   const [dropping, setDropping] = useState(false);
   const [ballPath, setBallPath] = useState<number[]>([]);

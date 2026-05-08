@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 
 type GameState = "waiting" | "flying" | "crashed";
@@ -10,6 +11,7 @@ interface Props { play: (s: "bet"|"win"|"lose"|"click"|"cashout"|"tick"|"reveal"
 
 const AviatorGame = ({ play }: Props) => {
   const { isLoggedIn, profile, setShowAuthModal, deposit, withdraw } = useAuth();
+  const { isAdmin } = useAdmin();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const [gameState, setGameState] = useState<GameState>("waiting");

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 
 interface Props { play: (s: "bet"|"win"|"lose"|"click"|"cashout"|"tick"|"reveal"|"bomb") => void; }
@@ -19,6 +20,7 @@ const BET_OPTIONS: { type: BetType; label: string; color: string; multiplier: nu
 
 const RouletteGame = ({ play }: Props) => {
   const { isLoggedIn, profile, setShowAuthModal, deposit, withdraw } = useAuth();
+  const { isAdmin } = useAdmin();
   const [stake, setStake] = useState(50);
   const [betType, setBetType] = useState<BetType>("red");
   const [spinning, setSpinning] = useState(false);
