@@ -122,11 +122,18 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: Props) => {
             <div className="bg-card border border-border rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="font-display font-bold text-lg">{profile.username}</h3>
-                {roles.includes("admin") && (
-                  <span className="flex items-center gap-1 text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded uppercase font-bold">
-                    <ShieldCheck className="w-3 h-3" /> Admin
-                  </span>
-                )}
+                <div className="flex items-center gap-1">
+                  {profile.is_flagged && (
+                    <span className="flex items-center gap-1 text-[10px] bg-destructive/20 text-destructive px-2 py-0.5 rounded uppercase font-bold">
+                      <Flag className="w-3 h-3" /> Flagged
+                    </span>
+                  )}
+                  {roles.includes("admin") && (
+                    <span className="flex items-center gap-1 text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded uppercase font-bold">
+                      <ShieldCheck className="w-3 h-3" /> Admin
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
                 {profile.email && <p className="flex items-center gap-2"><Mail className="w-3 h-3" /> {profile.email}</p>}
@@ -134,9 +141,20 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: Props) => {
                 {profile.country && <p className="flex items-center gap-2"><MapPin className="w-3 h-3" /> {profile.country} • {cur}</p>}
                 <p className="text-[10px] opacity-70">Joined {new Date(profile.created_at).toLocaleString()}</p>
                 {profile.referral_code && <p className="text-[10px]">Referral: <span className="font-mono">{profile.referral_code}</span></p>}
+                {profile.is_flagged && profile.flag_reason && <p className="text-[10px] text-destructive">Flag reason: {profile.flag_reason}</p>}
                 <p className="text-[10px] font-mono opacity-60 break-all">{userId}</p>
               </div>
             </div>
+
+            <Section title="Quick Actions" icon={<ShieldCheck className="w-3.5 h-3.5" />}>
+              <div className="grid grid-cols-2 gap-2">
+                <ActionButton busy={busyAction === "adjust_balance"} onClick={adjustBalance} icon={<CreditCard className="w-3.5 h-3.5" />} label="Adjust Balance" />
+                <ActionButton busy={busyAction === "resend_password_reset"} onClick={() => callAdminAction("resend_password_reset")} icon={<KeyRound className="w-3.5 h-3.5" />} label="Send Reset" />
+                <ActionButton busy={busyAction === "resend_activation"} onClick={() => callAdminAction("resend_activation")} icon={<Send className="w-3.5 h-3.5" />} label="Send Activation" />
+                <ActionButton busy={busyAction === "flag_account"} onClick={toggleFlag} icon={profile.is_flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />} label={profile.is_flagged ? "Clear Flag" : "Flag Account"} />
+              </div>
+              {!profile.email && <p className="text-[10px] text-muted-foreground mt-2">Reset and activation emails require a saved recovery email.</p>}
+            </Section>
 
             {/* Balances */}
             <div className="grid grid-cols-2 gap-2">
@@ -193,6 +211,16 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: Props) => {
                 );
               })}
             </Section>
+
+            <Section title="Admin Action Log" icon={<History className="w-3.5 h-3.5" />}>
+              {logs.length === 0 ? <Empty /> : logs.map((log) => (
+                <Row key={log.id}
+                  left={<span className="font-medium">{String(log.action).replaceAll("_", " ")}</span>}
+                  right={log.amount ? <span className="font-bold">{fmt(Number(log.amount), cur)}</span> : <span />}
+                  sub={`${log.reason || "No reason"} • ${new Date(log.created_at).toLocaleString()}`}
+                />
+              ))}
+            </Section>
           </div>
         )}
       </SheetContent>
@@ -215,6 +243,18 @@ const Row = ({ left, right, sub }: { left: React.ReactNode; right: React.ReactNo
 );
 
 const Empty = () => <p className="text-xs text-muted-foreground italic">None yet</p>;
+
+const ActionButton = ({ busy, onClick, icon, label }: { busy: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
+  <button
+    type="button"
+    disabled={busy}
+    onClick={onClick}
+    className="flex items-center justify-center gap-1.5 bg-secondary text-foreground rounded-md px-2 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+  >
+    {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
+    {label}
+  </button>
+);
 
 const StatusPill = ({ status }: { status: string }) => {
   const map: Record<string, string> = {
