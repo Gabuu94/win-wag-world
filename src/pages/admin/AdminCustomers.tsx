@@ -28,6 +28,7 @@ const AdminCustomers = () => {
   const [regForm, setRegForm] = useState({ email: "", username: "", password: "" });
   const [adminForm, setAdminForm] = useState({ email: "", username: "", password: "" });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
     setLoading(true);
