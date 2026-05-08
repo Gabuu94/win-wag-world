@@ -229,6 +229,7 @@ const AdminSupport = () => {
           )}
         </div>
       </div>
+      <UserDetailDrawer userId={viewUserId} open={!!viewUserId} onOpenChange={(v) => !v && setViewUserId(null)} />
     </div>
   );
 };
