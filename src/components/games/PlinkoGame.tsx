@@ -20,7 +20,7 @@ const PlinkoGame = ({ play }: Props) => {
 
   const drop = async () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     if (dropping) return;
     const ok = await withdraw(stake);
     if (!ok) return;

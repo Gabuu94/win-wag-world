@@ -77,7 +77,7 @@ const CrashGame = ({ play }: Props) => {
 
   const placeBet = async () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     if (state !== "betting") { toast.error("Wait for next round"); return; }
     const ok = await withdraw(stake);
     if (!ok) return;

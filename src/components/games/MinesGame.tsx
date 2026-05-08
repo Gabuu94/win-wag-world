@@ -29,7 +29,7 @@ const MinesGame = ({ play }: Props) => {
 
   const startGame = async () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     const ok = await withdraw(stake);
     if (!ok) return;
     play("bet");

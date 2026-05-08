@@ -129,7 +129,7 @@ const AviatorGame = ({ play }: Props) => {
 
   const placeBet = () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     if (gameState !== "waiting") { toast.error("Wait for next round"); return; }
     play("bet");
     withdraw(stake).then(ok => { if (ok) { setHasBet(true); toast.success(`Bet placed: $${stake}`); } });

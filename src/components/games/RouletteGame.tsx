@@ -42,7 +42,7 @@ const RouletteGame = ({ play }: Props) => {
 
   const spin = async () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
-    if (!profile || profile.balance < stake) { toast.error("Insufficient balance"); return; }
+    if (!isAdmin && (!profile || profile.balance < stake)) { toast.error("Insufficient balance"); return; }
     if (spinning) return;
     const ok = await withdraw(stake);
     if (!ok) return;
