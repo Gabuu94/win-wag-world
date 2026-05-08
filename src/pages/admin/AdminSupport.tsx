@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Send, RefreshCw, CheckCircle2, XCircle, Image as ImageIcon } from "lucide-react";
+import { Send, RefreshCw, CheckCircle2, XCircle, Image as ImageIcon, Eye } from "lucide-react";
+import UserDetailDrawer from "@/components/admin/UserDetailDrawer";
 
 interface ChatUser {
   user_id: string;
@@ -30,6 +31,7 @@ const AdminSupport = () => {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
 
   const fetchChatUsers = async () => {
     setLoading(true);
@@ -166,12 +168,22 @@ const AdminSupport = () => {
             <>
               <div className="p-3 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{chatUsers.find(u => u.user_id === selectedUser)?.username}</span>
+                  <button
+                    onClick={() => setViewUserId(selectedUser)}
+                    className="font-medium text-sm hover:text-primary underline-offset-2 hover:underline flex items-center gap-1"
+                    title="View full user details"
+                  >
+                    {chatUsers.find(u => u.user_id === selectedUser)?.username}
+                    <Eye className="w-3 h-3 opacity-60" />
+                  </button>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedStatus === "resolved" ? "bg-primary/20 text-primary" : "bg-accent/20 text-accent"}`}>
                     {selectedStatus}
                   </span>
                 </div>
                 <div className="flex gap-1">
+                  <button onClick={() => setViewUserId(selectedUser)} className="flex items-center gap-1 text-xs bg-secondary text-foreground px-2 py-1 rounded hover:bg-muted">
+                    <Eye className="w-3 h-3" /> View User
+                  </button>
                   {selectedStatus === "open" ? (
                     <button onClick={() => resolveChat(selectedUser)} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20">
                       <CheckCircle2 className="w-3 h-3" /> Resolve
@@ -217,6 +229,7 @@ const AdminSupport = () => {
           )}
         </div>
       </div>
+      <UserDetailDrawer userId={viewUserId} open={!!viewUserId} onOpenChange={(v) => !v && setViewUserId(null)} />
     </div>
   );
 };

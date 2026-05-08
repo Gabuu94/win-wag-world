@@ -6,6 +6,7 @@ import { useState } from "react";
 import { formatMoney, currencySymbol, isKenyan } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const CODE_LENGTH = 6;
 const CODE_REGEX = /^[A-Z0-9]{6}$/;
@@ -23,6 +24,7 @@ const generateShortCode = () => {
 const BettingSlipContent = () => {
   const { selections, removeSelection, clearAll, stake, setStake, loadFromCode } = useBetting();
   const { isLoggedIn, profile, user, placeBet, setShowAuthModal, setShowDepositModal } = useAuth();
+  const { isAdmin } = useAdmin();
 
   // Load-code dialog state
   const [loadOpen, setLoadOpen] = useState(false);
@@ -53,7 +55,7 @@ const BettingSlipContent = () => {
       return;
     }
     const bettable = profile ? Math.max(0, profile.balance - (profile.winnings_balance || 0)) : 0;
-    if (!profile || bettable < stake) {
+    if (!isAdmin && (!profile || bettable < stake)) {
       if (profile && (profile.winnings_balance || 0) > 0) {
         toast.error("Winnings cannot be wagered. Withdraw them first or top up with a new deposit.");
       } else {
