@@ -6,6 +6,7 @@ import { useState } from "react";
 import { formatMoney, currencySymbol, isKenyan } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const CODE_LENGTH = 6;
 const CODE_REGEX = /^[A-Z0-9]{6}$/;
