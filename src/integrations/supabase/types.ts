@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_action_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          amount: number | null
+          created_at: string
+          id: string
+          metadata: Json
+          reason: string | null
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          amount?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          amount?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       admin_game_markets: {
         Row: {
           created_at: string
@@ -395,7 +428,11 @@ export type Database = {
           created_at: string
           currency: string | null
           email: string | null
+          flag_reason: string | null
+          flagged_at: string | null
+          flagged_by: string | null
           id: string
+          is_flagged: boolean
           pending_fees: number
           phone: string | null
           referral_code: string | null
@@ -412,7 +449,11 @@ export type Database = {
           created_at?: string
           currency?: string | null
           email?: string | null
+          flag_reason?: string | null
+          flagged_at?: string | null
+          flagged_by?: string | null
           id?: string
+          is_flagged?: boolean
           pending_fees?: number
           phone?: string | null
           referral_code?: string | null
@@ -429,7 +470,11 @@ export type Database = {
           created_at?: string
           currency?: string | null
           email?: string | null
+          flag_reason?: string | null
+          flagged_at?: string | null
+          flagged_by?: string | null
           id?: string
+          is_flagged?: boolean
           pending_fees?: number
           phone?: string | null
           referral_code?: string | null
