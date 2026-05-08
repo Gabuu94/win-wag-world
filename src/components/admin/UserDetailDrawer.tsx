@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Loader2, User, Wallet, Trophy, ArrowDownToLine, ArrowUpFromLine, History, Mail, Phone, MapPin, ShieldCheck } from "lucide-react";
+import { Loader2, User, Wallet, Trophy, ArrowDownToLine, ArrowUpFromLine, History, Mail, Phone, MapPin, ShieldCheck, CreditCard, KeyRound, Send, Flag, FlagOff } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   userId: string | null;
@@ -20,6 +21,9 @@ interface ProfileFull {
   pending_fees: number;
   total_wagered: number;
   referral_code?: string | null;
+  is_flagged?: boolean;
+  flag_reason?: string | null;
+  flagged_at?: string | null;
   created_at: string;
 }
 
@@ -32,29 +36,69 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: Props) => {
   const [txns, setTxns] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+
+  const loadUser = async () => {
+    if (!userId) return;
+    setLoading(true);
+    const [p, b, t, w, r, l] = await Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("bets").select("*").eq("user_id", userId).order("placed_at", { ascending: false }).limit(25),
+      supabase.from("transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(25),
+      supabase.from("withdrawal_requests").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(10),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase.from("admin_action_logs").select("*").eq("target_user_id", userId).order("created_at", { ascending: false }).limit(10),
+    ]);
+    setProfile((p.data as any) || null);
+    setBets(b.data || []);
+    setTxns(t.data || []);
+    setWithdrawals(w.data || []);
+    setRoles(((r.data as any[]) || []).map((x) => x.role));
+    setLogs(l.data || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!open || !userId) return;
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      const [p, b, t, w, r] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("bets").select("*").eq("user_id", userId).order("placed_at", { ascending: false }).limit(25),
-        supabase.from("transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(25),
-        supabase.from("withdrawal_requests").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(10),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
-      ]);
+      await loadUser();
       if (cancelled) return;
-      setProfile((p.data as any) || null);
-      setBets(b.data || []);
-      setTxns(t.data || []);
-      setWithdrawals(w.data || []);
-      setRoles(((r.data as any[]) || []).map((x) => x.role));
-      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [open, userId]);
+
+  const callAdminAction = async (action: string, payload: Record<string, any> = {}) => {
+    if (!userId) return;
+    setBusyAction(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-action", {
+        body: { action, target_user_id: userId, ...payload },
+      });
+      if (error || !(data as any)?.success) throw new Error((data as any)?.error || error?.message || "Action failed");
+      toast.success("Action completed");
+      await loadUser();
+    } catch (err: any) {
+      toast.error(err?.message || "Action failed");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const adjustBalance = () => {
+    const amount = prompt("Enter amount to add or subtract. Use a minus sign to debit, e.g. -500");
+    if (!amount || !Number.isFinite(Number(amount)) || Number(amount) === 0) return;
+    const reason = prompt("Reason for this balance adjustment:") || "Admin balance adjustment";
+    callAdminAction("adjust_balance", { amount: Number(amount), reason });
+  };
+
+  const toggleFlag = () => {
+    if (profile?.is_flagged) return callAdminAction("flag_account", { flagged: false, reason: "Flag cleared" });
+    const reason = prompt("Why should this account be flagged?");
+    if (!reason?.trim()) return;
+    callAdminAction("flag_account", { flagged: true, reason: reason.trim() });
+  };
 
   const cur = profile?.currency || "KES";
 
