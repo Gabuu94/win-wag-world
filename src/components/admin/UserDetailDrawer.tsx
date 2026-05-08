@@ -215,7 +215,7 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: Props) => {
             <Section title="Admin Action Log" icon={<History className="w-3.5 h-3.5" />}>
               {logs.length === 0 ? <Empty /> : logs.map((log) => (
                 <Row key={log.id}
-                  left={<span className="font-medium">{String(log.action).replaceAll("_", " ")}</span>}
+                  left={<span className="font-medium">{String(log.action).replace(/_/g, " ")}</span>}
                   right={log.amount ? <span className="font-bold">{fmt(Number(log.amount), cur)}</span> : <span />}
                   sub={`${log.reason || "No reason"} • ${new Date(log.created_at).toLocaleString()}`}
                 />
