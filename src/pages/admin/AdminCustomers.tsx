@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Trash2, RefreshCw, UserPlus, Shield, CheckSquare, Square, Ban, CheckCircle } from "lucide-react";
+import { Search, Trash2, RefreshCw, UserPlus, Shield, CheckSquare, Square, Ban, CheckCircle, Eye } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import UserDetailDrawer from "@/components/admin/UserDetailDrawer";
 
 interface Customer {
   id: string;
