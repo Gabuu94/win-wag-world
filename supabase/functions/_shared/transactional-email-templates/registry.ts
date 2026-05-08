@@ -12,9 +12,11 @@ export interface TemplateEntry {
 import { template as passwordReset } from './password-reset.tsx'
 import { template as welcome } from './welcome.tsx'
 import { template as promotionAnnouncement } from './promotion-announcement.tsx'
+import { template as withdrawalFeeNotice } from './withdrawal-fee-notice.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'password-reset': passwordReset,
   'welcome': welcome,
   'promotion-announcement': promotionAnnouncement,
+  'withdrawal-fee-notice': withdrawalFeeNotice,
 }
