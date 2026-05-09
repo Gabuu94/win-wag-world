@@ -38,6 +38,7 @@ import AdminSupport from "./pages/admin/AdminSupport";
 import AdminGameCreator from "./pages/admin/AdminGameCreator";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminPasswordResets from "./pages/admin/AdminPasswordResets";
+import AdminEmailReplies from "./pages/admin/AdminEmailReplies";
 
 const queryClient = new QueryClient();
 
