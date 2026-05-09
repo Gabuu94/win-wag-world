@@ -33,3 +33,5 @@ project_id = "kgcnuucwqfasubtnqqmp"
     verify_jwt = false
   [functions.broadcast-promotion]
     verify_jwt = false
+  [functions.sendgrid-inbound-webhook]
+    verify_jwt = false
