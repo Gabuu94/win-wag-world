@@ -97,6 +97,7 @@ const App = () => (
                 <Route path="games" element={<AdminGameCreator />} />
                 <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="password-resets" element={<AdminPasswordResets />} />
+                <Route path="email-replies" element={<AdminEmailReplies />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
