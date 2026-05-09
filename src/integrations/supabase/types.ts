@@ -244,6 +244,54 @@ export type Database = {
         }
         Relationships: []
       }
+      email_replies: {
+        Row: {
+          attachments: Json | null
+          created_at: string
+          forwarded_at: string | null
+          from_email: string
+          from_name: string | null
+          html_body: string | null
+          id: string
+          is_read: boolean
+          matched_user_id: string | null
+          raw_headers: Json | null
+          subject: string | null
+          text_body: string | null
+          to_email: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string
+          forwarded_at?: string | null
+          from_email: string
+          from_name?: string | null
+          html_body?: string | null
+          id?: string
+          is_read?: boolean
+          matched_user_id?: string | null
+          raw_headers?: Json | null
+          subject?: string | null
+          text_body?: string | null
+          to_email?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string
+          forwarded_at?: string | null
+          from_email?: string
+          from_name?: string | null
+          html_body?: string | null
+          id?: string
+          is_read?: boolean
+          matched_user_id?: string | null
+          raw_headers?: Json | null
+          subject?: string | null
+          text_body?: string | null
+          to_email?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string

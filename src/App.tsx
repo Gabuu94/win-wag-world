@@ -38,6 +38,7 @@ import AdminSupport from "./pages/admin/AdminSupport";
 import AdminGameCreator from "./pages/admin/AdminGameCreator";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminPasswordResets from "./pages/admin/AdminPasswordResets";
+import AdminEmailReplies from "./pages/admin/AdminEmailReplies";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const App = () => (
                 <Route path="games" element={<AdminGameCreator />} />
                 <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="password-resets" element={<AdminPasswordResets />} />
+                <Route path="email-replies" element={<AdminEmailReplies />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
