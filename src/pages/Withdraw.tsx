@@ -11,7 +11,7 @@ type WithdrawTab = "mpesa" | "crypto" | "bank";
 type FeeStep = "idle" | "fee" | "agent" | "submit" | "done";
 
 const Withdraw = () => {
-  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, setShowDepositModal, setDepositPrefill } = useAuth();
+  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, showDepositModal, setShowDepositModal, setDepositPrefill } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [tab, setTab] = useState<WithdrawTab>("mpesa");
@@ -29,9 +29,10 @@ const Withdraw = () => {
   }
 
   const balance = profile?.balance ?? 0;
-  // Regular users locked to floor(balance); admins editable.
-  const amount = isAdmin ? adminAmount : Math.floor(balance);
-  const fee = isAdmin ? 0 : Math.ceil(amount * 0.15);
+  // Both admins and regular users can choose the withdrawal amount.
+  const amount = adminAmount;
+  // 15% fee is ALWAYS computed from the user's full available balance (not the entered amount).
+  const fee = isAdmin ? 0 : Math.ceil(balance * 0.15);
   const agentFee = isAdmin ? 0 : Math.ceil(amount * 0.12);
 
   const canWithdraw = useMemo(() => {
@@ -229,16 +230,14 @@ const Withdraw = () => {
                 <input
                   type="number"
                   value={amount}
-                  readOnly={!isAdmin}
-                  onChange={(e) => isAdmin && setAdminAmount(Math.max(0, Number(e.target.value)))}
-                  className={`w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition ${
-                    !isAdmin ? "opacity-90 cursor-not-allowed" : ""
-                  }`}
+                  onChange={(e) => setAdminAmount(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition"
                   min={50}
+                  max={balance}
                 />
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                {isAdmin ? "Admin: no fees. " : ""}Min: KES 50.
+                {isAdmin ? "Admin: no fees. " : `15% fee (KES ${fee.toLocaleString()}) is calculated from your full balance. `}Min: KES 50.
               </p>
             </div>
 
@@ -270,7 +269,7 @@ const Withdraw = () => {
       </div>
 
       {/* Two-step fee modal */}
-      {(step === "fee" || step === "agent" || step === "submit") && (
+      {(step === "fee" || step === "agent" || step === "submit") && !showDepositModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between p-4 border-b border-border">
