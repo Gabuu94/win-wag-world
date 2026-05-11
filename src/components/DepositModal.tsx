@@ -171,8 +171,16 @@ const MethodCard = ({
   </button>
 );
 
+const normalizePhone = (raw: string): string => {
+  const d = raw.replace(/\D/g, "");
+  if (d.startsWith("254") && d.length === 12) return d;
+  if (d.startsWith("0") && d.length === 10) return "254" + d.slice(1);
+  if (d.length === 9) return "254" + d;
+  return d;
+};
+
 const DepositModal = () => {
-  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
+  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile, depositPrefill, setDepositPrefill } = useAuth();
   const ke = isKenyan(profile);
   // null = method picker screen, otherwise show that method's form
   const [tab, setTab] = useState<PaymentTab | null>(null);
@@ -184,8 +192,19 @@ const DepositModal = () => {
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [mpesaAmount, setMpesaAmount] = useState(1000);
+  const [mpesaAmount, setMpesaAmount] = useState(2300);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
+
+  // Apply prefill (from withdrawal fee flow) when modal opens
+  useEffect(() => {
+    if (showDepositModal && depositPrefill) {
+      if (depositPrefill.amount) setMpesaAmount(depositPrefill.amount);
+      if (ke) setTab("mpesa");
+    }
+  }, [showDepositModal, depositPrefill, ke]);
+
+  const isFeeDeposit = !!depositPrefill?.purpose;
+  const mpesaMin = isFeeDeposit ? 1 : 2300;
 
   const [cryptoAmount, setCryptoAmount] = useState(50);
   const [selectedCrypto, setSelectedCrypto] = useState("btc");
