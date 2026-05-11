@@ -340,6 +340,7 @@ const DepositModal = () => {
     setPhase({ kind: "form" });
     setTab(null);
     pendingTxRef.current = null;
+    setDepositPrefill(null);
   };
 
   const handleClose = () => {
@@ -354,30 +355,36 @@ const DepositModal = () => {
       setTab("crypto");
       return;
     }
-    if (mpesaAmount < 1000) { toast.error("Minimum deposit is KES 1,000"); return; }
-    if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
+    if (mpesaAmount < mpesaMin) { toast.error(`Minimum deposit is KES ${mpesaMin.toLocaleString()}`); return; }
+    const normalizedPhone = normalizePhone(phoneNumber);
+    if (normalizedPhone.length !== 12 || !normalizedPhone.startsWith("254")) {
+      toast.error("Enter a valid M-Pesa phone number");
+      return;
+    }
 
     setMpesaProcessing(true);
     waitStartRef.current = Date.now();
     try {
-      // Record pending transaction
+      const purpose = depositPrefill?.purpose;
+      // Record pending transaction (preserve purpose so withdrawal flow can detect fee deposits)
       const { data: tx } = await supabase.from("transactions").insert({
         user_id: user.id,
         type: "deposit",
         method: "mpesa",
         amount: mpesaAmount,
         status: "pending",
-        reference: phoneNumber,
+        reference: normalizedPhone,
+        metadata: purpose ? { purpose } : {},
       }).select("id").single();
       pendingTxRef.current = tx?.id ?? null;
 
       const { data, error } = await supabase.functions.invoke("mpesa-deposit", {
-        body: { phone_number: phoneNumber, amount: mpesaAmount, user_id: user.id },
+        body: { phone_number: normalizedPhone, amount: mpesaAmount, user_id: user.id },
       });
 
       if (error) throw error;
       if (data?.success) {
-        setPhase({ kind: "stk-sent", amount: mpesaAmount, phone: phoneNumber });
+        setPhase({ kind: "stk-sent", amount: mpesaAmount, phone: normalizedPhone });
       } else {
         toast.error(data?.error || "Failed to initiate M-Pesa payment");
       }
