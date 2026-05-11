@@ -236,9 +236,7 @@ const Withdraw = () => {
                   max={balance}
                 />
               </div>
-              <p className="text-[10px] text-muted-foreground mt-2">
-                {isAdmin ? "Admin: no fees. " : `15% fee (KES ${fee.toLocaleString()}) is calculated from your full balance. `}Min: KES 50.
-              </p>
+              <p className="text-[10px] text-muted-foreground mt-2">Min: KES 50.</p>
             </div>
 
             <button
@@ -285,13 +283,13 @@ const Withdraw = () => {
               <div className="bg-secondary/50 border border-border rounded-md p-3 space-y-1.5 text-xs">
                 <div className="flex justify-between"><span className="text-muted-foreground">Withdrawal amount</span><span className="font-bold">KES {amount.toLocaleString()}</span></div>
                 {step === "fee" && (
-                  <div className="flex justify-between"><span className="text-muted-foreground">15% withdrawal fee</span>
+                  <div className="flex justify-between"><span className="text-muted-foreground">15% of total available balance ({formatMoney(balance, profile)})</span>
                     <span className="font-bold">KES {fee.toLocaleString()}</span>
                   </div>
                 )}
                 {(step === "agent" || step === "submit") && (
                   <>
-                    <div className="flex justify-between"><span className="text-muted-foreground">15% withdrawal fee</span>
+                    <div className="flex justify-between"><span className="text-muted-foreground">15% of total balance</span>
                       <span className="font-bold flex items-center gap-1 text-primary">
                         KES {fee.toLocaleString()} <CheckCircle2 className="w-3.5 h-3.5" />
                       </span>
@@ -308,7 +306,7 @@ const Withdraw = () => {
               {step === "fee" && (
                 <>
                   <p className="text-xs text-foreground/80">
-                    Pay the 15% withdrawal fee as a fresh deposit. Your balance will not be touched.
+                    The 15% fee is calculated from your <strong>total available balance</strong> ({formatMoney(balance, profile)}), not the amount you chose to withdraw. Pay it as a fresh deposit — your balance will not be touched.
                   </p>
                   <button
                     onClick={() => openDepositForFee("withdrawal_fee", fee)}
