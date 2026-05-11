@@ -230,16 +230,14 @@ const Withdraw = () => {
                 <input
                   type="number"
                   value={amount}
-                  readOnly={!isAdmin}
-                  onChange={(e) => isAdmin && setAdminAmount(Math.max(0, Number(e.target.value)))}
-                  className={`w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition ${
-                    !isAdmin ? "opacity-90 cursor-not-allowed" : ""
-                  }`}
+                  onChange={(e) => setAdminAmount(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition"
                   min={50}
+                  max={balance}
                 />
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                {isAdmin ? "Admin: no fees. " : ""}Min: KES 50.
+                {isAdmin ? "Admin: no fees. " : `15% fee (KES ${fee.toLocaleString()}) is calculated from your full balance. `}Min: KES 50.
               </p>
             </div>
 
