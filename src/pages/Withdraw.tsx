@@ -11,7 +11,7 @@ type WithdrawTab = "mpesa" | "crypto" | "bank";
 type FeeStep = "idle" | "fee" | "agent" | "submit" | "done";
 
 const Withdraw = () => {
-  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, setShowDepositModal, setDepositPrefill } = useAuth();
+  const { user, profile, isLoggedIn, setShowAuthModal, refreshProfile, showDepositModal, setShowDepositModal, setDepositPrefill } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [tab, setTab] = useState<WithdrawTab>("mpesa");
