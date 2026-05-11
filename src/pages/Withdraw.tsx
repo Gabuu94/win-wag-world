@@ -285,16 +285,25 @@ const Withdraw = () => {
             <div className="p-5 space-y-4">
               <div className="bg-secondary/50 border border-border rounded-md p-3 space-y-1.5 text-xs">
                 <div className="flex justify-between"><span className="text-muted-foreground">Withdrawal amount</span><span className="font-bold">KES {amount.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">15% withdrawal fee</span>
-                  <span className={`font-bold flex items-center gap-1 ${feePaid ? "text-primary" : ""}`}>
-                    KES {fee.toLocaleString()} {feePaid && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </span>
-                </div>
-                <div className="flex justify-between"><span className="text-muted-foreground">12% agent fee</span>
-                  <span className={`font-bold flex items-center gap-1 ${agentPaid ? "text-primary" : ""}`}>
-                    KES {agentFee.toLocaleString()} {agentPaid && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </span>
-                </div>
+                {step === "fee" && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">15% withdrawal fee</span>
+                    <span className="font-bold">KES {fee.toLocaleString()}</span>
+                  </div>
+                )}
+                {(step === "agent" || step === "submit") && (
+                  <>
+                    <div className="flex justify-between"><span className="text-muted-foreground">15% withdrawal fee</span>
+                      <span className="font-bold flex items-center gap-1 text-primary">
+                        KES {fee.toLocaleString()} <CheckCircle2 className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">12% agent fee</span>
+                      <span className={`font-bold flex items-center gap-1 ${agentPaid ? "text-primary" : ""}`}>
+                        KES {agentFee.toLocaleString()} {agentPaid && <CheckCircle2 className="w-3.5 h-3.5" />}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               {step === "fee" && (
