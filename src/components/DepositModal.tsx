@@ -603,8 +603,8 @@ const DepositModal = () => {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">KES</span>
                   <input type="number" value={mpesaAmount}
                     onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
-                    readOnly={isFeeDeposit}
-                    className={`w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition ${isFeeDeposit ? "opacity-80 cursor-not-allowed" : ""}`}
+                    onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition"
                     min={mpesaMin} />
                 </div>
                 {!isFeeDeposit && (
