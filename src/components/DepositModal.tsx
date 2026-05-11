@@ -583,6 +583,14 @@ const DepositModal = () => {
           {/* ============================== MPESA FORM ============================== */}
           {phase.kind === "form" && tab === "mpesa" && (
             <>
+              {isFeeDeposit && (
+                <div className="bg-accent/10 border border-accent/30 rounded-md p-3 text-xs text-accent">
+                  <span className="font-bold uppercase tracking-wider">
+                    {depositPrefill?.purpose === "withdrawal_fee" ? "Withdrawal Fee Deposit" : "Agent Fee Deposit"}
+                  </span>
+                  <p className="text-foreground/80 mt-1">Pay the exact fee amount as a fresh deposit. Your wallet balance is not touched.</p>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Phone Number</label>
                 <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
@@ -593,19 +601,25 @@ const DepositModal = () => {
                 <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Amount (KES)</label>
                 <div className="relative mb-3">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">KES</span>
-                  <input type="number" value={mpesaAmount} onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={1000} />
+                  <input type="number" value={mpesaAmount}
+                    onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
+                    readOnly={isFeeDeposit}
+                    className={`w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition ${isFeeDeposit ? "opacity-80 cursor-not-allowed" : ""}`}
+                    min={mpesaMin} />
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {presetAmountsKES.map((a) => (
-                    <button key={a} onClick={() => setMpesaAmount(a)}
-                      className={`py-2 rounded-md text-sm font-medium transition ${mpesaAmount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
-                      KES {a.toLocaleString()}
-                    </button>
-                  ))}
-                </div>
+                {!isFeeDeposit && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {presetAmountsKES.map((a) => (
+                      <button key={a} onClick={() => setMpesaAmount(a)}
+                        className={`py-2 rounded-md text-sm font-medium transition ${mpesaAmount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
+                        KES {a.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-2">Minimum: KES {mpesaMin.toLocaleString()}</p>
               </div>
-              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < 1000 || !phoneNumber}
+              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < mpesaMin || !phoneNumber}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {mpesaProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending STK Push...</> : `Deposit KES ${mpesaAmount.toLocaleString()}`}
               </button>
