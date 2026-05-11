@@ -29,6 +29,8 @@ interface AuthContextType {
   setShowAuthModal: (v: boolean) => void;
   showDepositModal: boolean;
   setShowDepositModal: (v: boolean) => void;
+  depositPrefill: { amount?: number; purpose?: "withdrawal_fee" | "agent_fee" } | null;
+  setDepositPrefill: (v: { amount?: number; purpose?: "withdrawal_fee" | "agent_fee" } | null) => void;
 }
 
 // Convert a phone-style identifier to a synthetic email used by Supabase auth.
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositPrefill, setDepositPrefill] = useState<{ amount?: number; purpose?: "withdrawal_fee" | "agent_fee" } | null>(null);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -269,6 +272,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setShowAuthModal,
         showDepositModal,
         setShowDepositModal,
+        depositPrefill,
+        setDepositPrefill,
       }}
     >
       {children}

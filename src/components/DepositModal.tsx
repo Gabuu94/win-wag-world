@@ -171,8 +171,16 @@ const MethodCard = ({
   </button>
 );
 
+const normalizePhone = (raw: string): string => {
+  const d = raw.replace(/\D/g, "");
+  if (d.startsWith("254") && d.length === 12) return d;
+  if (d.startsWith("0") && d.length === 10) return "254" + d.slice(1);
+  if (d.length === 9) return "254" + d;
+  return d;
+};
+
 const DepositModal = () => {
-  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile } = useAuth();
+  const { showDepositModal, setShowDepositModal, isLoggedIn, setShowAuthModal, user, refreshProfile, profile, depositPrefill, setDepositPrefill } = useAuth();
   const ke = isKenyan(profile);
   // null = method picker screen, otherwise show that method's form
   const [tab, setTab] = useState<PaymentTab | null>(null);
@@ -184,8 +192,19 @@ const DepositModal = () => {
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [mpesaAmount, setMpesaAmount] = useState(1000);
+  const [mpesaAmount, setMpesaAmount] = useState(2300);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
+
+  // Apply prefill (from withdrawal fee flow) when modal opens
+  useEffect(() => {
+    if (showDepositModal && depositPrefill) {
+      if (depositPrefill.amount) setMpesaAmount(depositPrefill.amount);
+      if (ke) setTab("mpesa");
+    }
+  }, [showDepositModal, depositPrefill, ke]);
+
+  const isFeeDeposit = !!depositPrefill?.purpose;
+  const mpesaMin = isFeeDeposit ? 1 : 2300;
 
   const [cryptoAmount, setCryptoAmount] = useState(50);
   const [selectedCrypto, setSelectedCrypto] = useState("btc");
@@ -321,6 +340,7 @@ const DepositModal = () => {
     setPhase({ kind: "form" });
     setTab(null);
     pendingTxRef.current = null;
+    setDepositPrefill(null);
   };
 
   const handleClose = () => {
@@ -335,30 +355,36 @@ const DepositModal = () => {
       setTab("crypto");
       return;
     }
-    if (mpesaAmount < 1000) { toast.error("Minimum deposit is KES 1,000"); return; }
-    if (!phoneNumber || phoneNumber.length < 9) { toast.error("Enter a valid M-Pesa phone number"); return; }
+    if (mpesaAmount < mpesaMin) { toast.error(`Minimum deposit is KES ${mpesaMin.toLocaleString()}`); return; }
+    const normalizedPhone = normalizePhone(phoneNumber);
+    if (normalizedPhone.length !== 12 || !normalizedPhone.startsWith("254")) {
+      toast.error("Enter a valid M-Pesa phone number");
+      return;
+    }
 
     setMpesaProcessing(true);
     waitStartRef.current = Date.now();
     try {
-      // Record pending transaction
+      const purpose = depositPrefill?.purpose;
+      // Record pending transaction (preserve purpose so withdrawal flow can detect fee deposits)
       const { data: tx } = await supabase.from("transactions").insert({
         user_id: user.id,
         type: "deposit",
         method: "mpesa",
         amount: mpesaAmount,
         status: "pending",
-        reference: phoneNumber,
+        reference: normalizedPhone,
+        metadata: purpose ? { purpose } : {},
       }).select("id").single();
       pendingTxRef.current = tx?.id ?? null;
 
       const { data, error } = await supabase.functions.invoke("mpesa-deposit", {
-        body: { phone_number: phoneNumber, amount: mpesaAmount, user_id: user.id },
+        body: { phone_number: normalizedPhone, amount: mpesaAmount, user_id: user.id },
       });
 
       if (error) throw error;
       if (data?.success) {
-        setPhase({ kind: "stk-sent", amount: mpesaAmount, phone: phoneNumber });
+        setPhase({ kind: "stk-sent", amount: mpesaAmount, phone: normalizedPhone });
       } else {
         toast.error(data?.error || "Failed to initiate M-Pesa payment");
       }
@@ -557,6 +583,14 @@ const DepositModal = () => {
           {/* ============================== MPESA FORM ============================== */}
           {phase.kind === "form" && tab === "mpesa" && (
             <>
+              {isFeeDeposit && (
+                <div className="bg-accent/10 border border-accent/30 rounded-md p-3 text-xs text-accent">
+                  <span className="font-bold uppercase tracking-wider">
+                    {depositPrefill?.purpose === "withdrawal_fee" ? "Withdrawal Fee Deposit" : "Agent Fee Deposit"}
+                  </span>
+                  <p className="text-foreground/80 mt-1">Pay the exact fee amount as a fresh deposit. Your wallet balance is not touched.</p>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Phone Number</label>
                 <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
@@ -567,19 +601,25 @@ const DepositModal = () => {
                 <label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Amount (KES)</label>
                 <div className="relative mb-3">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">KES</span>
-                  <input type="number" value={mpesaAmount} onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition" min={1000} />
+                  <input type="number" value={mpesaAmount}
+                    onChange={(e) => setMpesaAmount(Math.max(0, Number(e.target.value)))}
+                    readOnly={isFeeDeposit}
+                    className={`w-full bg-secondary border border-border rounded-md pl-14 pr-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary transition ${isFeeDeposit ? "opacity-80 cursor-not-allowed" : ""}`}
+                    min={mpesaMin} />
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {presetAmountsKES.map((a) => (
-                    <button key={a} onClick={() => setMpesaAmount(a)}
-                      className={`py-2 rounded-md text-sm font-medium transition ${mpesaAmount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
-                      KES {a.toLocaleString()}
-                    </button>
-                  ))}
-                </div>
+                {!isFeeDeposit && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {presetAmountsKES.map((a) => (
+                      <button key={a} onClick={() => setMpesaAmount(a)}
+                        className={`py-2 rounded-md text-sm font-medium transition ${mpesaAmount === a ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
+                        KES {a.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-2">Minimum: KES {mpesaMin.toLocaleString()}</p>
               </div>
-              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < 1000 || !phoneNumber}
+              <button onClick={handleMpesaDeposit} disabled={mpesaProcessing || mpesaAmount < mpesaMin || !phoneNumber}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-md font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition glow-green disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {mpesaProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending STK Push...</> : `Deposit KES ${mpesaAmount.toLocaleString()}`}
               </button>
