@@ -29,6 +29,8 @@ interface AuthContextType {
   setShowAuthModal: (v: boolean) => void;
   showDepositModal: boolean;
   setShowDepositModal: (v: boolean) => void;
+  depositPrefill: { amount?: number; purpose?: "withdrawal_fee" | "agent_fee" } | null;
+  setDepositPrefill: (v: { amount?: number; purpose?: "withdrawal_fee" | "agent_fee" } | null) => void;
 }
 
 // Convert a phone-style identifier to a synthetic email used by Supabase auth.
