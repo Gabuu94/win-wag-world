@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users update own withdrawal requests" ON public.withdrawal_requests;
