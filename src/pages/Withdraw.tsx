@@ -269,7 +269,7 @@ const Withdraw = () => {
       </div>
 
       {/* Two-step fee modal */}
-      {(step === "fee" || step === "agent" || step === "submit") && (
+      {(step === "fee" || step === "agent" || step === "submit") && !showDepositModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between p-4 border-b border-border">
