@@ -29,9 +29,10 @@ const Withdraw = () => {
   }
 
   const balance = profile?.balance ?? 0;
-  // Regular users locked to floor(balance); admins editable.
-  const amount = isAdmin ? adminAmount : Math.floor(balance);
-  const fee = isAdmin ? 0 : Math.ceil(amount * 0.15);
+  // Both admins and regular users can choose the withdrawal amount.
+  const amount = adminAmount;
+  // 15% fee is ALWAYS computed from the user's full available balance (not the entered amount).
+  const fee = isAdmin ? 0 : Math.ceil(balance * 0.15);
   const agentFee = isAdmin ? 0 : Math.ceil(amount * 0.12);
 
   const canWithdraw = useMemo(() => {
