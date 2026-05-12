@@ -1,0 +1,3 @@
+CREATE POLICY "Admins can manage vouchers" ON public.vouchers FOR ALL USING (public.has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can view all vouchers" ON public.vouchers FOR SELECT USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can view all redemptions" ON public.voucher_redemptions FOR SELECT USING (public.has_role(auth.uid(), 'admin'::app_role));
