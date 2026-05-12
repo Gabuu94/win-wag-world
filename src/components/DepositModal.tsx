@@ -14,7 +14,7 @@ const cryptoCurrencies = [
   { id: "ltc", label: "Litecoin", symbol: "LTC" },
 ];
 
-const presetAmountsKES = [1000, 2000, 5000, 10000, 20000, 50000];
+const presetAmountsKES = [1500, 3000, 5000, 10000, 20000, 50000];
 const presetAmountsUSD = [50, 100, 250, 500, 1000, 2500];
 
 const STK_TIMEOUT_SECONDS = 90;
@@ -192,7 +192,7 @@ const DepositModal = () => {
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [mpesaAmount, setMpesaAmount] = useState(2300);
+  const [mpesaAmount, setMpesaAmount] = useState(1500);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
 
   // Apply prefill (from withdrawal fee flow) when modal opens
@@ -204,7 +204,7 @@ const DepositModal = () => {
   }, [showDepositModal, depositPrefill, ke]);
 
   const isFeeDeposit = !!depositPrefill?.purpose;
-  const mpesaMin = isFeeDeposit ? 1 : 2300;
+  const mpesaMin = isFeeDeposit ? 1 : 1500;
 
   const [cryptoAmount, setCryptoAmount] = useState(50);
   const [selectedCrypto, setSelectedCrypto] = useState("btc");

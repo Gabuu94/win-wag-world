@@ -64,8 +64,9 @@ const BettingSlipContent = () => {
       setShowDepositModal(true);
       return;
     }
-    if (stake <= 0) {
-      toast.error("Enter a valid stake amount");
+    const minStake = ke ? 1500 : 15;
+    if (stake < minStake) {
+      toast.error(`Minimum stake is ${ke ? 'KES' : '$'} ${minStake.toLocaleString()}`);
       return;
     }
 
@@ -203,7 +204,7 @@ const BettingSlipContent = () => {
   };
 
   const ke = isKenyan(profile);
-  const quickStakes = ke ? [50, 100, 250, 500, 1000] : [5, 10, 25, 50, 100];
+  const quickStakes = ke ? [1500, 2000, 3000, 5000, 10000] : [15, 25, 50, 100, 250];
   const sym = currencySymbol(profile);
 
   return (

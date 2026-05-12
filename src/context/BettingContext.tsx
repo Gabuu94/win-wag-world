@@ -28,7 +28,7 @@ export const useBetting = () => {
 
 export const BettingProvider = ({ children }: { children: ReactNode }) => {
   const [selections, setSelections] = useState<BetSelection[]>([]);
-  const [stake, setStake] = useState(10);
+  const [stake, setStake] = useState(1500);
 
   const toggleSelection = useCallback((selection: BetSelection) => {
     setSelections((prev) => {
