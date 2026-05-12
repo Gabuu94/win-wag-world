@@ -203,7 +203,7 @@ const BettingSlipContent = () => {
   };
 
   const ke = isKenyan(profile);
-  const quickStakes = ke ? [50, 100, 250, 500, 1000] : [5, 10, 25, 50, 100];
+  const quickStakes = ke ? [1500, 2000, 3000, 5000, 10000] : [15, 25, 50, 100, 250];
   const sym = currencySymbol(profile);
 
   return (
