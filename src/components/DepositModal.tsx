@@ -14,7 +14,7 @@ const cryptoCurrencies = [
   { id: "ltc", label: "Litecoin", symbol: "LTC" },
 ];
 
-const presetAmountsKES = [1000, 2000, 5000, 10000, 20000, 50000];
+const presetAmountsKES = [1500, 3000, 5000, 10000, 20000, 50000];
 const presetAmountsUSD = [50, 100, 250, 500, 1000, 2500];
 
 const STK_TIMEOUT_SECONDS = 90;
