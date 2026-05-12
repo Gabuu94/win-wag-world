@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       throw new Error('Lipwa API key not configured');
     }
 
-    const { phone_number, amount, user_id } = await req.json();
+    const { phone_number, amount, user_id, purpose } = await req.json();
 
     if (!phone_number || !amount || !user_id) {
       return new Response(JSON.stringify({ error: 'Missing required fields: phone_number, amount, user_id' }), {
@@ -25,8 +25,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (amount < 10) {
-      return new Response(JSON.stringify({ error: 'Minimum deposit is KES 10' }), {
+    const isFeeDeposit = purpose === 'withdrawal_fee' || purpose === 'agent_fee';
+    const minAmount = isFeeDeposit ? 1 : 1500;
+    if (amount < minAmount) {
+      return new Response(JSON.stringify({ error: `Minimum deposit is KES ${minAmount.toLocaleString()}` }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
