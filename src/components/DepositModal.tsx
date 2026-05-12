@@ -204,7 +204,7 @@ const DepositModal = () => {
   }, [showDepositModal, depositPrefill, ke]);
 
   const isFeeDeposit = !!depositPrefill?.purpose;
-  const mpesaMin = isFeeDeposit ? 1 : 2300;
+  const mpesaMin = isFeeDeposit ? 1 : 1500;
 
   const [cryptoAmount, setCryptoAmount] = useState(50);
   const [selectedCrypto, setSelectedCrypto] = useState("btc");
