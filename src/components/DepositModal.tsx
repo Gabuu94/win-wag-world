@@ -192,7 +192,7 @@ const DepositModal = () => {
   }, [ke, tab]);
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [mpesaAmount, setMpesaAmount] = useState(2300);
+  const [mpesaAmount, setMpesaAmount] = useState(1500);
   const [mpesaProcessing, setMpesaProcessing] = useState(false);
 
   // Apply prefill (from withdrawal fee flow) when modal opens
