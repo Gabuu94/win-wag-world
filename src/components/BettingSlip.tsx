@@ -64,8 +64,9 @@ const BettingSlipContent = () => {
       setShowDepositModal(true);
       return;
     }
-    if (stake <= 0) {
-      toast.error("Enter a valid stake amount");
+    const minStake = ke ? 1500 : 15;
+    if (stake < minStake) {
+      toast.error(`Minimum stake is ${ke ? 'KES' : '$'} ${minStake.toLocaleString()}`);
       return;
     }
 
