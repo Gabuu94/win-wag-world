@@ -379,7 +379,7 @@ const DepositModal = () => {
       pendingTxRef.current = tx?.id ?? null;
 
       const { data, error } = await supabase.functions.invoke("mpesa-deposit", {
-        body: { phone_number: normalizedPhone, amount: mpesaAmount, user_id: user.id },
+        body: { phone_number: normalizedPhone, amount: mpesaAmount, user_id: user.id, purpose },
       });
 
       if (error) throw error;
