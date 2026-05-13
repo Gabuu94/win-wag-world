@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     const { error: sendErr } = await supabase.functions.invoke('send-transactional-email', {
       body: {
         templateName: 'password-reset',
-        recipientEmail: normalizedEmail,
+        recipientEmail: (match.email || normalizedEmail).toLowerCase(),
         idempotencyKey: `pwd-reset-${tokenHash.slice(0, 16)}`,
         templateData: {
           username: match.username || 'Player',
