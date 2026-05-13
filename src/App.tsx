@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import GameShare from "./pages/GameShare";
 import ResetPassword from "./pages/ResetPassword";
 import Unsubscribe from "./pages/Unsubscribe";
+import InstallApp from "./pages/InstallApp";
 
 // Admin
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -88,6 +89,7 @@ const App = () => (
               <Route path="/virtuals" element={<VirtualGames />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route path="/install" element={<InstallApp />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
