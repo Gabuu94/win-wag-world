@@ -1,4 +1,4 @@
-import { Search, Wallet, User, Menu, X } from "lucide-react";
+import { Search, Wallet, User, Menu, X, Download } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +83,14 @@ const TopBar = ({ activeSport = "upcoming", onSportChange, searchQuery = "", onS
                 <span className="text-xs sm:text-sm font-medium">{profile.currency || "KES"} {profile.balance.toFixed(2)}</span>
               </div>
             )}
+
+            <button
+              onClick={() => navigate("/install")}
+              className="hidden sm:flex items-center gap-1 bg-secondary text-secondary-foreground px-3 py-2 rounded-md text-sm font-semibold hover:bg-muted transition"
+            >
+              <Download className="w-4 h-4" />
+              App
+            </button>
 
             <button
               onClick={() => {
