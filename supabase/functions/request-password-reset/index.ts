@@ -53,19 +53,33 @@ Deno.serve(async (req) => {
   try {
     const { phone, email } = await req.json()
 
-    if (!phone || !email) return genericResponse()
+    if (!phone && !email) return genericResponse()
 
-    const normalizedEmail = String(email).trim().toLowerCase()
-    const normalizedPhone = String(phone).replace(/\D/g, '')
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : ''
+    const normalizedPhone = phone ? String(phone).replace(/\D/g, '') : ''
 
-    // Find profile that matches BOTH phone and email
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('user_id, username, phone, email')
-      .ilike('email', normalizedEmail)
-      .limit(5)
-
-    const match = (profiles || []).find((p: any) => phonesMatch(p.phone, normalizedPhone))
+    // Find by email first, then by phone — accept either
+    let match: any = null
+    if (normalizedEmail) {
+      const { data: byEmail } = await supabase
+        .from('profiles')
+        .select('user_id, username, phone, email')
+        .ilike('email', normalizedEmail)
+        .limit(5)
+      if (normalizedPhone) {
+        match = (byEmail || []).find((p: any) => phonesMatch(p.phone, normalizedPhone)) || (byEmail || [])[0]
+      } else {
+        match = (byEmail || [])[0]
+      }
+    }
+    if (!match && normalizedPhone) {
+      const { data: byPhone } = await supabase
+        .from('profiles')
+        .select('user_id, username, phone, email')
+        .not('email', 'is', null)
+        .limit(200)
+      match = (byPhone || []).find((p: any) => phonesMatch(p.phone, normalizedPhone))
+    }
 
     if (!match) {
       console.log('No matching profile for password reset request')
@@ -93,7 +107,7 @@ Deno.serve(async (req) => {
     const { error: sendErr } = await supabase.functions.invoke('send-transactional-email', {
       body: {
         templateName: 'password-reset',
-        recipientEmail: normalizedEmail,
+        recipientEmail: (match.email || normalizedEmail).toLowerCase(),
         idempotencyKey: `pwd-reset-${tokenHash.slice(0, 16)}`,
         templateData: {
           username: match.username || 'Player',

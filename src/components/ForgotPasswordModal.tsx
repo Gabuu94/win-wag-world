@@ -56,17 +56,17 @@ const ForgotPasswordModal = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim() || !email.trim()) {
-      toast.error("Please enter both your phone number and email");
+    if (!phone.trim() && !email.trim()) {
+      toast.error("Please enter your phone number or recovery email");
       return;
     }
     setSubmitting(true);
     try {
-      const fullPhone = `${selectedCountry.dial}${phone.replace(/^0+/, "")}`;
+      const fullPhone = phone.trim() ? `${selectedCountry.dial}${phone.replace(/^0+/, "")}` : "";
       const { error } = await supabase.functions.invoke("request-password-reset", {
         body: {
-          phone: fullPhone,
-          email: email.trim().toLowerCase(),
+          phone: fullPhone || undefined,
+          email: email.trim() ? email.trim().toLowerCase() : undefined,
         },
       });
       if (error) throw error;
