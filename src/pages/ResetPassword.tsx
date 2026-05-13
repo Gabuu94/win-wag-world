@@ -42,8 +42,8 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (password.length < 5) {
+      toast.error("Password must be at least 5 characters");
       return;
     }
     if (password !== confirm) {
@@ -110,7 +110,7 @@ const ResetPassword = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm outline-none focus:border-primary"
                   required
-                  minLength={6}
+                  minLength={5}
                   autoComplete="new-password"
                 />
               </div>
@@ -123,7 +123,7 @@ const ResetPassword = () => {
                   onChange={(e) => setConfirm(e.target.value)}
                   className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm outline-none focus:border-primary"
                   required
-                  minLength={6}
+                  minLength={5}
                   autoComplete="new-password"
                 />
               </div>
