@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/currency";
 import {
   X, Wallet, ArrowDownToLine, Receipt, Ticket, MessageCircle,
   ClipboardList, Settings, Crown, ShieldCheck, LogOut, Home, Trophy,
-  Tv, Gamepad2, BookOpen, FileText, Lock
+  Tv, Gamepad2, BookOpen, FileText, Download
 } from "lucide-react";
 
 interface UserMenuDrawerProps {
@@ -63,6 +63,7 @@ const UserMenuDrawer = ({ open, onClose }: UserMenuDrawerProps) => {
     { label: "Virtual Games", icon: Gamepad2, path: "/virtuals" },
     { label: "Sport", icon: Trophy, path: "/" },
     { label: "Live Sport", icon: Tv, path: "/" },
+    { label: "Install App", icon: Download, path: "/install" },
     { label: "Deposit Guide", icon: BookOpen, path: "/" },
     { label: "Terms & Conditions", icon: FileText, path: "/" },
   ];

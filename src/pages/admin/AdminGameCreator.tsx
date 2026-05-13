@@ -15,6 +15,23 @@ const SPORTS = [
   { value: "cricket", label: "🏏 Cricket" },
 ];
 
+const CORRECT_SCORE_SELECTIONS = [
+  ...Array.from({ length: 6 }, (_, home) =>
+    Array.from({ length: 6 }, (_, away) => {
+      const baseOdds = 9 + (home + away) * 5 + Math.abs(home - away) * 4 + (home === away ? 0 : 2);
+      return { name: `${home}-${away}`, odds: Math.min(80, baseOdds) };
+    })
+  ).flat(),
+  { name: "6-0", odds: 65 },
+  { name: "0-6", odds: 70 },
+  { name: "6-1", odds: 72 },
+  { name: "1-6", odds: 76 },
+  { name: "6-2", odds: 80 },
+  { name: "2-6", odds: 80 },
+  { name: "7-0", odds: 80 },
+  { name: "0-7", odds: 80 },
+];
+
 const FOOTBALL_MARKETS = [
   { type: "match_result", name: "Match Result (1X2)", selections: [{ name: "Home Win", odds: 1.5 }, { name: "Draw", odds: 3.5 }, { name: "Away Win", odds: 4.0 }] },
   { type: "draw_no_bet", name: "Draw No Bet", selections: [{ name: "Home", odds: 1.4 }, { name: "Away", odds: 2.8 }] },
@@ -36,7 +53,7 @@ const FOOTBALL_MARKETS = [
   { type: "goal_in_both_halves", name: "Goal in Both Halves", selections: [{ name: "Yes", odds: 2.4 }, { name: "No", odds: 1.5 }] },
   { type: "corners_total", name: "Total Corners Over/Under 9.5", selections: [{ name: "Over 9.5", odds: 1.85 }, { name: "Under 9.5", odds: 1.95 }] },
   { type: "cards_total", name: "Total Cards Over/Under 3.5", selections: [{ name: "Over 3.5", odds: 1.9 }, { name: "Under 3.5", odds: 1.9 }] },
-  { type: "correct_score", name: "Correct Score", selections: [{ name: "1-0", odds: 7.0 }, { name: "2-0", odds: 9.0 }, { name: "2-1", odds: 8.5 }, { name: "1-1", odds: 5.5 }, { name: "0-0", odds: 8.0 }, { name: "0-1", odds: 8.5 }, { name: "0-2", odds: 12.0 }, { name: "3-0", odds: 15.0 }, { name: "3-1", odds: 14.0 }, { name: "3-2", odds: 18.0 }] },
+  { type: "correct_score", name: "Correct Score", selections: CORRECT_SCORE_SELECTIONS },
   { type: "halftime_fulltime", name: "Halftime/Fulltime", selections: [{ name: "Home/Home", odds: 2.5 }, { name: "Home/Draw", odds: 12.0 }, { name: "Draw/Home", odds: 5.0 }, { name: "Draw/Draw", odds: 4.5 }, { name: "Away/Away", odds: 6.0 }] },
   { type: "first_goal", name: "First Goal Scorer Method", selections: [{ name: "Header", odds: 5.0 }, { name: "Shot", odds: 1.8 }, { name: "Penalty", odds: 6.0 }, { name: "Free Kick", odds: 12.0 }] },
   { type: "clean_sheet_home", name: "Home Clean Sheet", selections: [{ name: "Yes", odds: 2.2 }, { name: "No", odds: 1.6 }] },

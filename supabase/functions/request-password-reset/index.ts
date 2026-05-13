@@ -104,8 +104,14 @@ Deno.serve(async (req) => {
     const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`
 
     // Send branded email via send-transactional-email
-    const { error: sendErr } = await supabase.functions.invoke('send-transactional-email', {
-      body: {
+    const sendResp = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+      },
+      body: JSON.stringify({
         templateName: 'password-reset',
         recipientEmail: (match.email || normalizedEmail).toLowerCase(),
         idempotencyKey: `pwd-reset-${tokenHash.slice(0, 16)}`,
@@ -114,11 +120,11 @@ Deno.serve(async (req) => {
           resetUrl,
           expiresInMinutes: TOKEN_TTL_MINUTES,
         },
-      },
+      }),
     })
 
-    if (sendErr) {
-      console.error('Failed to enqueue reset email', sendErr)
+    if (!sendResp.ok) {
+      console.error('Failed to enqueue reset email', sendResp.status, await sendResp.text())
     }
 
     return genericResponse()

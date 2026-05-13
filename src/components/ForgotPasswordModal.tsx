@@ -114,7 +114,7 @@ const ForgotPasswordModal = () => {
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <p className="text-sm text-muted-foreground">
-              Enter the phone number and recovery email on your account. We'll send a secure reset link to your inbox.
+              Enter your phone number or recovery email. We'll send a secure reset link to your inbox.
             </p>
 
             {/* Country */}
@@ -146,7 +146,6 @@ const ForgotPasswordModal = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                   className="w-full bg-secondary border border-border rounded-r-md px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-                  required
                 />
               </div>
             </div>
@@ -160,7 +159,6 @@ const ForgotPasswordModal = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
-                required
                 autoComplete="email"
               />
             </div>
@@ -175,7 +173,7 @@ const ForgotPasswordModal = () => {
             </button>
 
             <p className="text-xs text-center text-muted-foreground">
-              Use the same recovery email you added when creating your BETKING account.
+              If you use phone only, the reset link goes to the recovery email saved on your account.
             </p>
           </form>
         )}
