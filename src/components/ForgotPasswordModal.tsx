@@ -56,8 +56,8 @@ const ForgotPasswordModal = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim() || !email.trim()) {
-      toast.error("Please enter both your phone number and email");
+    if (!phone.trim() && !email.trim()) {
+      toast.error("Please enter your phone number or recovery email");
       return;
     }
     setSubmitting(true);
