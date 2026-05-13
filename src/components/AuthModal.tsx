@@ -173,7 +173,7 @@ const AuthModal = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-secondary border border-border rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition"
               required
-              minLength={6}
+              minLength={5}
             />
           </div>
 

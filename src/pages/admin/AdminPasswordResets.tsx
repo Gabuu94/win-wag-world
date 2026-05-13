@@ -32,8 +32,8 @@ const AdminPasswordResets = () => {
 
   const handleReset = async (req: ResetRequest) => {
     const pwd = newPasswords[req.id];
-    if (!pwd || pwd.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!pwd || pwd.length < 5) {
+      toast.error("Password must be at least 5 characters");
       return;
     }
     setResetting(req.id);
@@ -95,7 +95,7 @@ const AdminPasswordResets = () => {
                 <div className="flex flex-wrap gap-2">
                   <input
                     type="text"
-                    placeholder="New password (min 6)"
+                    placeholder="New password (min 5)"
                     value={newPasswords[r.id] || ""}
                     onChange={(e) => setNewPasswords((p) => ({ ...p, [r.id]: e.target.value }))}
                     className="flex-1 min-w-[180px] bg-secondary border border-border rounded-md px-3 py-2 text-sm outline-none focus:border-primary"

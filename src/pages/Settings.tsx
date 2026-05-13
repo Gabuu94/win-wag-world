@@ -53,7 +53,7 @@ const Settings = () => {
   };
 
   const handleChangePassword = async () => {
-    if (newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    if (newPassword.length < 5) { toast.error("Password must be at least 5 characters"); return; }
     if (newPassword !== confirmPassword) { toast.error("Passwords don't match"); return; }
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -137,7 +137,7 @@ const Settings = () => {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Min 6 characters"
+                placeholder="Min 5 characters"
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>

@@ -31,8 +31,8 @@ Deno.serve(async (req) => {
     }
 
     const { phone, newPassword, requestId } = await req.json();
-    if (!phone || !newPassword || newPassword.length < 6) {
-      return new Response(JSON.stringify({ error: "phone and newPassword (min 6 chars) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!phone || !newPassword || newPassword.length < 5) {
+      return new Response(JSON.stringify({ error: "phone and newPassword (min 5 chars) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Normalize phone to synthetic email

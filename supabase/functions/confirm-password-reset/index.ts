@@ -56,8 +56,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      return jsonError('Password must be at least 6 characters')
+    if (!newPassword || newPassword.length < 5) {
+      return jsonError('Password must be at least 5 characters')
     }
 
     // Update password via admin API
