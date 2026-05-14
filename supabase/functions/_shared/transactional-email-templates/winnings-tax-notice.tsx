@@ -156,8 +156,7 @@ export const template = {
     totalOdds: 42,
     currency: 'KES',
     taxRate: 15,
-    minDeposit: 4000,
-    ctaUrl: 'https://betking.space/deposit',
+    ctaUrl: 'https://betking.space/?deposit=1',
   },
 } satisfies TemplateEntry
 
