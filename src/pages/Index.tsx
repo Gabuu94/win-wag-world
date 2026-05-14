@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import TopBar from "@/components/TopBar";
 import SportsSidebar from "@/components/SportsSidebar";
 import LiveMatchesFeed from "@/components/LiveMatchesFeed";
