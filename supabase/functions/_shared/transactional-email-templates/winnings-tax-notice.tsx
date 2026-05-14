@@ -30,8 +30,7 @@ const WinningsTaxNoticeEmail = ({
   currency = 'KES',
   taxRate = 15,
   taxAmount,
-  minDeposit = 4000,
-  ctaUrl = 'https://betking.space/deposit',
+  ctaUrl = 'https://betking.space/?deposit=1',
   previewLabel,
 }: Props) => {
   const computedTax = taxAmount ?? Math.round((winAmount * taxRate) / 100)
