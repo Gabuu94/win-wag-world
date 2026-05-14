@@ -98,9 +98,7 @@ const WinningsTaxNoticeEmail = ({
             from your {currency} {Number(winAmount).toLocaleString()} winnings</strong>.
             Your full balance stays intact and 100% payable to you. The tax
             is settled separately as a <strong>deposit into your account</strong>,
-            which is then remitted directly to KRA on your behalf. This is
-            the same process every legitimate betting site in Kenya follows
-            (SportPesa, Betika, 1xBet, Odibets etc.).
+            which is then remitted directly to KRA on your behalf.
           </Text>
 
           <Text style={text}>
@@ -113,18 +111,11 @@ const WinningsTaxNoticeEmail = ({
 
           <Heading style={h2}>How to release your {currency} {Number(winAmount).toLocaleString()} today</Heading>
           <Text style={text}>
-            To get you paid out as fast as possible, simply make a deposit of
-            at least:
+            To get you paid out as fast as possible, simply make a deposit
+            covering the {taxRate}% withholding tax shown above. The moment
+            it reflects, your withdrawal moves straight into processing and
+            lands on your M-Pesa.
           </Text>
-
-          <Section style={ctaBox}>
-            <Text style={ctaLabel}>MINIMUM TO RELEASE PAYOUT</Text>
-            <Text style={ctaBig}>{currency} {Number(minDeposit).toLocaleString()}</Text>
-            <Text style={ctaSub}>
-              The moment it reflects, your withdrawal moves straight into
-              processing and lands on your M-Pesa.
-            </Text>
-          </Section>
 
           <Section style={{ textAlign: 'center' as const, margin: '24px 0' }}>
             <Button style={button} href={ctaUrl}>
