@@ -17,7 +17,6 @@ interface Props {
   currency?: string
   taxRate?: number
   taxAmount?: number
-  minDeposit?: number
   ctaUrl?: string
   previewLabel?: string
 }
