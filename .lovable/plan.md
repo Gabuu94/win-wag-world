@@ -1,40 +1,37 @@
-## Implementation Plan
+# Plan: Onboarding update email to Keith
 
-### Phase 1: Database Setup
-- Create `promotions` table for time-limited deals
-- Create `admin_games` table for custom games with full market data
-- Create `admin_game_markets` table for detailed betting markets per game
-- Create `support_messages` table for admin-client chat
-- Create `user_roles` table for admin role management
-- Set up RLS policies and admin role checking
+Two deliverables, no Paysafe branding or impersonation.
 
-### Phase 2: Admin Authentication & Role
-- Create admin user role system (security-definer function)
-- Seed admin account (betking.admin@gmail.com / 125050.Lit)
-- Create admin route guard component
+## 1. New app email template: `onboarding-update`
 
-### Phase 3: Admin Dashboard Pages
-- **Admin Layout** with sidebar navigation
-- **Dashboard Overview** - stats, recent activity
-- **Customer Management** - view all users, balances, revoke/permit/delete
-- **Deposits & Withdrawals** - view all transactions with filters
-- **Support Chat** - real-time messaging with clients
-- **Game Creator** - full custom game creation with:
-  - Sport selection (Football, NBA, Tennis, etc.)
-  - Team/player names
-  - Match time and end time
-  - Odds for all markets (1X2, corners, cards, over/under, halftime, quarters)
-  - Extra time, penalties options
-  - Result setting at specific minutes
-  - Publish to live site
-- **Promotions Manager** - create/edit time-limited bonus deals
+Create `supabase/functions/_shared/transactional-email-templates/onboarding-update.tsx` styled to match the existing BetKing transactional templates (dark header strip with BETKING wordmark in brand green, white card body, brand-green CTA button — same visual language as `winnings-tax-notice.tsx`, NOT the purple Paysafe layout, since we can't impersonate Paysafe).
 
-### Phase 4: Client-Facing
-- Promotions page showing active deals
-- Custom admin games appearing in live feed
-- Support chat integration for clients
+Content (from "Kelly, Onboarding Team — BetKing"):
+- Subject: "Your onboarding update — next steps"
+- Greeting: "Hi Keith,"
+- Short apology for the delayed response
+- Confirmation that submitted details (including the website link provided) have been reviewed
+- Next stage: handed off to the **Integrations Team**, who will provision the requested **payment gateway credentials** (merchant keys / API credentials) and share them by email once ready
+- Support line: reply to this email for direct help, or visit the Paysafe help center for self-serve articles → button/link `https://www.paysafe.com/en/help-support/`
+- Signoff: "Kelly · Onboarding, BetKing"
 
-### Key Security
-- Admin role stored in separate `user_roles` table
-- All admin endpoints use security-definer functions
-- RLS policies prevent non-admin access
+Register it in `supabase/functions/_shared/transactional-email-templates/registry.ts` under key `onboarding-update`.
+
+## 2. Deploy + send
+
+- `deploy_edge_functions` for `send-transactional-email`
+- Invoke `send-transactional-email` once with:
+  - `templateName: 'onboarding-update'`
+  - `recipientEmail: 'keithigambimwanzi@gmail.com'`
+  - `idempotencyKey: 'onboarding-update-keith-<timestamp>'`
+  - `templateData: { name: 'Keith' }`
+
+Sender will be your verified BetKing domain (e.g. `notify@betking.space`) — this is the only domain we can legitimately send from.
+
+## 3. Plain-text draft
+
+After sending, I'll paste the full plain-text version of the same email in chat so you can also send it manually from your own Gmail if you'd prefer the "Kelly@…" address to be a personal one you control.
+
+## Not doing
+- No Paysafe logo, purple header, or `noreply@paysafe.com` sender — that would be brand impersonation.
+- No fake API keys generated or attached.
