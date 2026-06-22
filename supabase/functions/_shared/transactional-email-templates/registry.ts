@@ -15,6 +15,7 @@ import { template as promotionAnnouncement } from './promotion-announcement.tsx'
 import { template as withdrawalFeeNotice } from './withdrawal-fee-notice.tsx'
 import { template as customerReplyForward } from './customer-reply-forward.tsx'
 import { template as winningsTaxNotice } from './winnings-tax-notice.tsx'
+import { template as onboardingUpdate } from './onboarding-update.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'password-reset': passwordReset,
@@ -23,4 +24,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'withdrawal-fee-notice': withdrawalFeeNotice,
   'customer-reply-forward': customerReplyForward,
   'winnings-tax-notice': winningsTaxNotice,
+  'onboarding-update': onboardingUpdate,
 }
