@@ -16,9 +16,9 @@ Deno.serve(async (req) => {
     });
 
     // Phone-based admin login: 0797585941 → +254797585941 → synthetic email
-    const adminPhoneDigits = "254797585941";
+    const adminPhoneDigits = "254711111111";
     const adminEmail = `${adminPhoneDigits}@betking.app`;
-    const adminPassword = "125050.Lit";
+    const adminPassword = "111111";
 
     // Check if admin already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
     let userId: string;
     if (existingAdmin) {
       userId = existingAdmin.id;
+      // Ensure password matches the requested admin password
+      await supabase.auth.admin.updateUserById(userId, { password: adminPassword });
     } else {
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: adminEmail,
