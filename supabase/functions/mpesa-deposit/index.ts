@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
 
   try {
     const LIPWA_API_KEY = Deno.env.get('LIPWA_API_KEY');
-    const LIPWA_CHANNEL_ID = 'CH_A4BDB835';
+    const LIPWA_CHANNEL_ID = 'CH_23BD07DB';
 
     if (!LIPWA_API_KEY) {
       throw new Error('Lipwa API key not configured');
