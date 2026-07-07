@@ -4,7 +4,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard, Users, Receipt, MessageCircle, Gamepad2, 
-  Gift, LogOut, Menu, X, ChevronRight, KeyRound, Mail, Ticket
+  Gift, LogOut, Menu, X, ChevronRight, KeyRound, Mail, Ticket, Settings2
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { path: "/admin/promotions", label: "Promotions", icon: Gift },
   { path: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { path: "/admin/password-resets", label: "Password Resets", icon: KeyRound },
+  { path: "/admin/settings", label: "Payment Settings", icon: Settings2 },
 ];
 
 const AdminLayout = () => {
