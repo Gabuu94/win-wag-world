@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -10,7 +12,20 @@ Deno.serve(async (req) => {
 
   try {
     const LIPWA_API_KEY = Deno.env.get('LIPWA_API_KEY');
-    const LIPWA_CHANNEL_ID = 'CH_23BD07DB';
+
+    // Read channel ID from app_settings (admin-configurable), fall back to env/default
+    let LIPWA_CHANNEL_ID = Deno.env.get('LIPWA_CHANNEL_ID') || 'CH_23BD07DB';
+    try {
+      const admin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+      const { data } = await admin.from('app_settings').select('value').eq('key', 'lipwa_channel_id').maybeSingle();
+      if (data?.value) LIPWA_CHANNEL_ID = data.value;
+    } catch (e) {
+      console.error('Failed to read lipwa_channel_id from app_settings:', e);
+    }
 
     if (!LIPWA_API_KEY) {
       throw new Error('Lipwa API key not configured');
