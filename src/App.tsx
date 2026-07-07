@@ -41,6 +41,7 @@ import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminPasswordResets from "./pages/admin/AdminPasswordResets";
 import AdminEmailReplies from "./pages/admin/AdminEmailReplies";
 import AdminVouchers from "./pages/admin/AdminVouchers";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
                 <Route path="vouchers" element={<AdminVouchers />} />
                 <Route path="password-resets" element={<AdminPasswordResets />} />
                 <Route path="email-replies" element={<AdminEmailReplies />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
