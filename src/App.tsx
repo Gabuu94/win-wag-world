@@ -103,6 +103,7 @@ const App = () => (
                 <Route path="vouchers" element={<AdminVouchers />} />
                 <Route path="password-resets" element={<AdminPasswordResets />} />
                 <Route path="email-replies" element={<AdminEmailReplies />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
